@@ -1,5 +1,7 @@
 # Child Process Component
 
+[![Build Status](https://secure.travis-ci.org/reactphp/child-process.png?branch=master)](http://travis-ci.org/reactphp/child-process)
+
 Library for executing child processes.
 
 ## Introduction
