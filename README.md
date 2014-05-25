@@ -41,7 +41,7 @@ Once a process terminates, the streams will become closed but not unset.
 * `$stderr`
 
 ## Usage
-
+```php
     $loop = React\EventLoop\Factory::create();
 
     $process = new React\ChildProcess\Process('echo foo');
@@ -59,7 +59,7 @@ Once a process terminates, the streams will become closed but not unset.
     });
 
     $loop->run();
-
+```
 ### Prepending Commands with `exec`
 
 Symfony pull request [#5759](https://github.com/symfony/symfony/issues/5759)
