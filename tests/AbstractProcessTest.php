@@ -67,7 +67,7 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
 
     public function testProcessWithDefaultCwdAndEnv()
     {
-        $cmd = PHP_BINARY . ' -r ' . escapeshellarg('echo getcwd(), PHP_EOL, count($_ENV), PHP_EOL;');
+        $cmd = PHP_BINARY . ' -r ' . escapeshellarg('echo getcwd(), PHP_EOL, count($_SERVER), PHP_EOL;');
 
         $loop = $this->createLoop();
         $process = new Process($cmd);
@@ -83,8 +83,14 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
 
         $loop->run();
 
-        $expectedOutput = sprintf('%s%s%d%s', getcwd(), PHP_EOL, count($_ENV), PHP_EOL);
-        $this->assertSame($expectedOutput, $output);
+        list($cwd, $envCount) = explode(PHP_EOL, $output);
+
+        /* Child process should inherit the same current working directory and
+         * existing environment variables; however, it may be missing a "_"
+         * environment variable (i.e. current shell/script) on some platforms.
+         */
+        $this->assertSame(getcwd(), $cwd);
+        $this->assertLessThanOrEqual(1, (count($_SERVER) - (integer) $envCount));
     }
 
     public function testProcessWithCwd()
