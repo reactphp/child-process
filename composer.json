@@ -9,6 +9,9 @@
         "react/event-loop": "0.3.*|0.4.*",
         "react/stream": "0.3.*|0.4.*"
     },
+    "require-dev": {
+        "sebastian/environment": "~1.0"
+    },
     "autoload": {
         "psr-4": { "React\\ChildProcess\\": "src" }
     },

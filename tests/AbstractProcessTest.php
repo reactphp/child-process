@@ -4,6 +4,7 @@ namespace React\Tests\ChildProcess;
 
 use React\ChildProcess\Process;
 use React\EventLoop\Timer\Timer;
+use SebastianBergmann\Environment\Runtime;
 
 abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
 {
@@ -329,6 +330,8 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
 
     private function getPhpBinary()
     {
-        return defined('PHP_BINARY') ? PHP_BINARY : 'php';
+        $runtime = new Runtime();
+
+        return $runtime->getBinary();
     }
 }
