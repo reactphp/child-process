@@ -110,12 +110,11 @@ class Process extends EventEmitter
             stream_set_blocking($pipe, 0);
         }
 
-        $that = $this;
-        $loop->addPeriodicTimer($interval, function (Timer $timer) use ($that) {
-            if (!$that->isRunning()) {
-                $that->close();
+        $loop->addPeriodicTimer($interval, function (Timer $timer) {
+            if (!$this->isRunning()) {
+                $this->close();
                 $timer->cancel();
-                $that->emit('exit', array($that->getExitCode(), $that->getTermSignal()));
+                $this->emit('exit', array($this->getExitCode(), $this->getTermSignal()));
             }
         });
     }

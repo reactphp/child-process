@@ -268,22 +268,21 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
             $termSignal = func_get_arg(1);
         });
 
-        $that = $this;
-        $loop->addTimer(0.001, function(Timer $timer) use ($process, $that) {
+        $loop->addTimer(0.001, function(Timer $timer) use ($process) {
             $process->start($timer->getLoop());
             $process->terminate(SIGSTOP);
 
-            $that->assertSoon(function() use ($process, $that) {
-                $that->assertTrue($process->isStopped());
-                $that->assertTrue($process->isRunning());
-                $that->assertEquals(SIGSTOP, $process->getStopSignal());
+            $this->assertSoon(function() use ($process) {
+                $this->assertTrue($process->isStopped());
+                $this->assertTrue($process->isRunning());
+                $this->assertEquals(SIGSTOP, $process->getStopSignal());
             });
 
             $process->terminate(SIGCONT);
 
-            $that->assertSoon(function() use ($process, $that) {
-                $that->assertFalse($process->isStopped());
-                $that->assertEquals(SIGSTOP, $process->getStopSignal());
+            $this->assertSoon(function() use ($process) {
+                $this->assertFalse($process->isStopped());
+                $this->assertEquals(SIGSTOP, $process->getStopSignal());
             });
         });
 
