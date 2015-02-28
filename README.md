@@ -105,3 +105,6 @@ implementation detail but it is important to be aware of it. Indeed, the output
 of the command will be written to the disk, and even if the file is deleted at 
 the end of the process, writing the output to the disk might be a security 
 issues if the output contains sensitive data.
+It could also be an issue with long lasting commands that are outputing a lot
+of data since the output file will grow until the process ends. This might
+fill the hard-drive if the process lasts long enough.

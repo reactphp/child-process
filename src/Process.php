@@ -132,7 +132,7 @@ class Process extends EventEmitter
      * @param float         $interval    Interval to periodically monitor process state (seconds)
      * @throws RuntimeException If the process is already running or fails to start
      */
-    public function startWindows(LoopInterface $loop, $interval = 0.1)
+    protected function startWindows(LoopInterface $loop, $interval = 0.1)
     {
         $cmd = $this->cmd;
         
