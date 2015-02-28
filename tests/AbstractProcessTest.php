@@ -68,13 +68,7 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
 
     public function testProcessWithDefaultCwdAndEnv()
     {
-        $cmd = $this->getPhpBinary() . ' -r ' . escapeshellarg('echo getcwd(), PHP_EOL, count($_SERVER), PHP_EOL;');
-
-        if (defined('PHP_WINDOWS_VERSION_BUILD')) {
-            // Windows madness! for some obscure reason, the whole command lines needs to be
-            // wrapped in quotes (?!?)
-            $cmd = '"'.$cmd.'"';
-        }
+        $cmd = $this->getPhpCommandLine('echo getcwd(), PHP_EOL, count($_SERVER), PHP_EOL;');
 
         $loop = $this->createLoop();
         $process = new Process($cmd);
@@ -109,16 +103,12 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
 
     public function testProcessWithCwd()
     {
-        $cmd = $this->getPhpBinary() . ' -r ' . escapeshellarg('echo getcwd(), PHP_EOL;');
-
-        $testCwd = '/';
+        $cmd = $this->getPhpCommandLine('echo getcwd(), PHP_EOL;');
 
         if (defined('PHP_WINDOWS_VERSION_BUILD')) {
-            // Windows madness! for some obscure reason, the whole command lines needs to be
-            // wrapped in quotes (?!?)
-            $cmd = '"'.$cmd.'"';
-
             $testCwd = 'C:\\';
+        } else {
+        	$testCwd = '/';
         }
 
         $loop = $this->createLoop();
@@ -144,15 +134,12 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
             $this->markTestSkipped('Cannot execute PHP processes with custom environments on Travis CI.');
         }
 
-        $cmd = $this->getPhpBinary() . ' -r ' . escapeshellarg('echo getenv("foo"), PHP_EOL;');
+        $cmd = $this->getPhpCommandLine('echo getenv("foo"), PHP_EOL;');
 
         if (defined('PHP_WINDOWS_VERSION_BUILD')) {
             // Windows madness! escapeshellarg seems to completely remove double quotes in Windows!
             // We need to use simple quotes in our PHP code!
-            $cmd = $this->getPhpBinary() . ' -r ' . escapeshellarg('echo getenv(\'foo\'), PHP_EOL;');
-            // Windows madness! for some obscure reason, the whole command lines needs to be
-            // wrapped in quotes (?!?)
-            $cmd = '"'.$cmd.'"';
+            $cmd = $this->getPhpCommandLine('echo getenv(\'foo\'), PHP_EOL;');
         }
 
         $loop = $this->createLoop();
@@ -378,9 +365,9 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
 
         $endTime = time();
 
-        $this->assertLessThanOrEqual($expectedMaxDuration, $endTime - $startTime, "Process took longer than expected.");
         $this->assertEquals($size + strlen(PHP_EOL), strlen($output));
         $this->assertSame(str_repeat('o', $size) . PHP_EOL, $output);
+        $this->assertLessThanOrEqual($expectedMaxDuration, $endTime - $startTime, "Process took longer than expected.");
     }
 
 
@@ -418,5 +405,17 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
         $runtime = new Runtime();
 
         return $runtime->getBinary();
+    }
+    
+    private function getPhpCommandLine($phpCode)
+    {
+    	$cmd = $this->getPhpBinary() . ' -r ' . escapeshellarg($phpCode);
+    	
+    	if (defined('PHP_WINDOWS_VERSION_BUILD')) {
+    		// Windows madness! for some obscure reason, the whole command lines needs to be
+    		// wrapped in quotes (?!?)
+    		$cmd = '"'.$cmd.'"';
+    	}
+    	return $cmd;
     }
 }
