@@ -81,7 +81,11 @@ class Process extends EventEmitter
         if ($this->isRunning()) {
             throw new \RuntimeException('Process is already running');
         }
-
+        
+        if (defined('PHP_WINDOWS_VERSION_BUILD')) {
+            return $this->startWindows($loop, $interval);
+        }
+        
         $cmd = $this->cmd;
         $fdSpec = array(
             array('pipe', 'r'), // stdin
@@ -118,6 +122,67 @@ class Process extends EventEmitter
             }
         });
     }
+    
+    /**
+     * This is a special implementation of the start method for the Windows operating system.
+     * This is needed because windows has a broken implementation of stdout / stderr pipes that
+     * cannot be fixed by PHP.
+     *
+     * @param LoopInterface $loop        Loop interface for stream construction
+     * @param float         $interval    Interval to periodically monitor process state (seconds)
+     * @throws RuntimeException If the process is already running or fails to start
+     */
+    public function startWindows(LoopInterface $loop, $interval = 0.1)
+    {
+        $cmd = $this->cmd;
+        
+        $stdoutName = tempnam(sys_get_temp_dir(), "out");
+        $stderrName = tempnam(sys_get_temp_dir(), "err");
+        
+        // Let's open 2 file pointers for both stdout and stderr
+        // One for writing, one for reading.
+        $stdout = fopen($stdoutName, "w");
+        $stderr = fopen($stderrName, "w");
+        $stdoutRead = fopen($stdoutName, "r");
+        $stderrRead = fopen($stderrName, "r");
+        
+        
+        $fdSpec = array(
+            array('pipe', 'r'),
+            $stdout,
+            $stderr,
+        );
+
+        // Read exit code through fourth pipe to work around --enable-sigchild
+        if ($this->isSigchildEnabled() && $this->enhanceSigchildCompatibility) {
+            $fdSpec[] = array('pipe', 'w');
+            $cmd = sprintf('(%s) 3>/dev/null; code=$?; echo $code >&3; exit $code', $cmd);
+        }
+
+        $this->process = proc_open($cmd, $fdSpec, $this->pipes, $this->cwd, $this->env, $this->options);
+        
+        if (!is_resource($this->process)) {
+            throw new \RuntimeException('Unable to launch a new process.');
+        }
+
+        $this->stdin  = new Stream($this->pipes[0], $loop);
+        $this->stdin->pause();
+        $this->stdout = new UnstopableStream($stdoutRead, $loop, $stdoutName);
+        $this->stderr = new UnstopableStream($stderrRead, $loop, $stderrName);
+
+        foreach ($this->pipes as $pipe) {
+            stream_set_blocking($pipe, 0);
+        }
+
+        $loop->addPeriodicTimer($interval, function (Timer $timer) use ($stdoutRead, $stderrRead) {
+            if (!$this->isRunning()) {
+                $this->close();
+                $timer->cancel();
+                $this->emit('exit', array($this->getExitCode(), $this->getTermSignal()));
+            }
+        });
+    }
+    
 
     /**
      * Close the process.

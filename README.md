@@ -93,3 +93,15 @@ process in a chain ends, which would complicate working with I/O streams. As an
 alternative, considering launching one process at a time and listening on its
 `exit` event to conditionally start the next process in the chain. This will
 give you an opportunity to configure the subsequent process' I/O streams.
+
+### Windows compatibility
+
+Windows has always had a poor `proc_open` implementation in PHP. Even if things 
+are better with the latest PHP versions, there are still a number of issues 
+when programs are outputing values to STDOUT or STDERR (truncated output,
+deadlocks, ...). To circumvent these problems, instead of relying on STDOUT 
+or STDERR, we write the output to files (in the temporary folder). This is an 
+implementation detail but it is important to be aware of it. Indeed, the output 
+of the command will be written to the disk, and even if the file is deleted at 
+the end of the process, writing the output to the disk might be a security 
+issues if the output contains sensitive data.
