@@ -96,15 +96,37 @@ give you an opportunity to configure the subsequent process' I/O streams.
 
 ### Windows compatibility
 
-Windows has always had a poor `proc_open` implementation in PHP. Even if things 
-are better with the latest PHP versions, there are still a number of issues 
+Windows has always had a poor `proc_open` implementation in PHP. Even if things
+are better with the latest PHP versions, there are still a number of issues
 when programs are outputing values to STDOUT or STDERR (truncated output,
-deadlocks, ...). To circumvent these problems, instead of relying on STDOUT 
-or STDERR, we write the output to files (in the temporary folder). This is an 
-implementation detail but it is important to be aware of it. Indeed, the output 
-of the command will be written to the disk, and even if the file is deleted at 
-the end of the process, writing the output to the disk might be a security 
-issues if the output contains sensitive data.
+deadlocks, ...).
+Prior to PHP 5.5.18 or PHP 5.6.3, a bug was simply causing a deadlock on
+Windows, making `proc_open` unusable.
+After PHP 5.5.18 and 5.6.3. Still, if the process
+you call outputs more than 4096 bytes, there are chances that your output will
+be truncated, or that your PHP process will stall for many seconds.
+
+Note: at the time of this writing, the bugs are still present in the current
+version of PHP, which arePHP 5.5.22 and PHP 5.6.6.
+
+To circumvent these problems, instead of relying on STDOUT
+or STDERR, *child-process* comes with a *Windows workaround* mode. You
+must activate it explicitly using the `useWindowsWorkaround` method.
+When activiated, it will redirect the output (STDOUT and STDERR) to files
+(in the temporary folder). This is an implementation detail but it is important
+to be aware of it. Indeed, the output of the command will be written to the
+disk, and even if the file is deleted at the end of the process, writing the
+output to the disk might be a security issues if the output contains sensitive
+data.
 It could also be an issue with long lasting commands that are outputing a lot
 of data since the output file will grow until the process ends. This might
 fill the hard-drive if the process lasts long enough.
+
+```php
+    $process = new React\ChildProcess\Process('echo foo');
+    $process->useWindowsWorkaround(true);
+    ...
+```
+
+Note: the `useWindowsWorkaround` is only used on Windows, it has no effect on
+other operating systems, so you can use it safely on Linux or MacOS.

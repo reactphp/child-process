@@ -35,6 +35,8 @@ class Process extends EventEmitter
     private $stopSignal;
     private $termSignal;
 
+    private $windowsWorkaround = false;
+
     private static $sigchild;
 
     /**
@@ -81,11 +83,11 @@ class Process extends EventEmitter
         if ($this->isRunning()) {
             throw new \RuntimeException('Process is already running');
         }
-        
-        if (defined('PHP_WINDOWS_VERSION_BUILD')) {
+
+        if (defined('PHP_WINDOWS_VERSION_BUILD') && $this->windowsWorkaround) {
             return $this->startWindows($loop, $interval);
         }
-        
+
         $cmd = $this->cmd;
         $fdSpec = array(
             array('pipe', 'r'), // stdin
@@ -122,7 +124,7 @@ class Process extends EventEmitter
             }
         });
     }
-    
+
     /**
      * This is a special implementation of the start method for the Windows operating system.
      * This is needed because windows has a broken implementation of stdout / stderr pipes that
@@ -135,18 +137,18 @@ class Process extends EventEmitter
     protected function startWindows(LoopInterface $loop, $interval = 0.1)
     {
         $cmd = $this->cmd;
-        
+
         $stdoutName = tempnam(sys_get_temp_dir(), "out");
         $stderrName = tempnam(sys_get_temp_dir(), "err");
-        
+
         // Let's open 2 file pointers for both stdout and stderr
         // One for writing, one for reading.
         $stdout = fopen($stdoutName, "w");
         $stderr = fopen($stderrName, "w");
         $stdoutRead = fopen($stdoutName, "r");
         $stderrRead = fopen($stderrName, "r");
-        
-        
+
+
         $fdSpec = array(
             array('pipe', 'r'),
             $stdout,
@@ -160,7 +162,7 @@ class Process extends EventEmitter
         }
 
         $this->process = proc_open($cmd, $fdSpec, $this->pipes, $this->cwd, $this->env, $this->options);
-        
+
         if (!is_resource($this->process)) {
             throw new \RuntimeException('Unable to launch a new process.');
         }
@@ -182,7 +184,7 @@ class Process extends EventEmitter
             }
         });
     }
-    
+
 
     /**
      * Close the process.
@@ -489,5 +491,13 @@ class Process extends EventEmitter
         if (!$this->status['running'] && -1 !== $this->status['exitcode']) {
             $this->exitCode = $this->status['exitcode'];
         }
+    }
+
+    /**
+     * Sets whether the windows workaround mode should be used or not.
+     * @param bool $windowsWorkaround
+     */
+    public function useWindowsWorkaround($windowsWorkaround = true) {
+        $this->windowsWorkaround = $windowsWorkaround;
     }
 }
