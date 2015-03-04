@@ -75,7 +75,7 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
         $cmd = $this->getPhpCommandLine('echo getcwd(), PHP_EOL, count($_SERVER), PHP_EOL;');
 
         $loop = $this->createLoop();
-        $process = new Process($cmd);
+        $process = new Process($cmd, null, null, array("bypass_shell"=>true));
         $process->useWindowsWorkaround();
 
         $output = '';
@@ -117,7 +117,7 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
         }
 
         $loop = $this->createLoop();
-        $process = new Process($cmd, $testCwd);
+        $process = new Process($cmd, $testCwd, null, array("bypass_shell"=>true));
         $process->useWindowsWorkaround();
 
         $output = '';
@@ -149,7 +149,7 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
         }
 
         $loop = $this->createLoop();
-        $process = new Process($cmd, null, array('foo' => 'bar'));
+        $process = new Process($cmd, null, array('foo' => 'bar'), array("bypass_shell"=>true));
         $process->useWindowsWorkaround();
 
         $output = '';
@@ -415,13 +415,6 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
 
     private function getPhpCommandLine($phpCode)
     {
-        $cmd = $this->getPhpBinary() . ' -r ' . escapeshellarg($phpCode);
-
-        if (defined('PHP_WINDOWS_VERSION_BUILD')) {
-            // Windows madness! for some obscure reason, the whole command lines needs to be
-            // wrapped in quotes (?!?)
-            $cmd = '"'.$cmd.'"';
-        }
-        return $cmd;
+        return $this->getPhpBinary() . ' -r ' . escapeshellarg($phpCode);
     }
 }
