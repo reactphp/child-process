@@ -77,7 +77,7 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
         $loop = $this->createLoop();
         $process = new Process($cmd);
         $process->useWindowsWorkaround();
-        
+
         $output = '';
         $error = '';
 
@@ -119,7 +119,7 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
         $loop = $this->createLoop();
         $process = new Process($cmd, $testCwd);
         $process->useWindowsWorkaround();
-        
+
         $output = '';
 
         $loop->addTimer(0.001, function(Timer $timer) use ($process, &$output) {
@@ -151,7 +151,7 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
         $loop = $this->createLoop();
         $process = new Process($cmd, null, array('foo' => 'bar'));
         $process->useWindowsWorkaround();
-        
+
         $output = '';
 
         $loop->addTimer(0.001, function(Timer $timer) use ($process, &$output) {
@@ -331,19 +331,14 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
         $this->assertFalse($process->isTerminated());
     }
 
-    public function testProcessSmallOutput() {
-        $this->processOutputOfSize(1000);
+    public function outputSizeProvider() {
+        return [ [1000, 5], [10000, 5], [100000, 5] ];
     }
 
-    public function testProcessMediumOutput() {
-        $this->processOutputOfSize(10000);
-    }
-
-    public function testProcessBigOutput() {
-        $this->processOutputOfSize(100000);
-    }
-
-    public function processOutputOfSize($size, $expectedMaxDuration = 5)
+    /**
+     * @dataProvider outputSizeProvider
+     */
+    public function testProcessOutputOfSize($size, $expectedMaxDuration = 5)
     {
         // Note: very strange behaviour of Windows (PHP 5.5.6):
         // on a 1000 long string, Windows succeeds.
@@ -417,11 +412,11 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
 
         return $runtime->getBinary();
     }
-    
+
     private function getPhpCommandLine($phpCode)
     {
         $cmd = $this->getPhpBinary() . ' -r ' . escapeshellarg($phpCode);
-        
+
         if (defined('PHP_WINDOWS_VERSION_BUILD')) {
             // Windows madness! for some obscure reason, the whole command lines needs to be
             // wrapped in quotes (?!?)
