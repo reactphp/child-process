@@ -104,15 +104,10 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
     public function testProcessWithCwd()
     {
         $cmd = $this->getPhpCommandLine('echo getcwd(), PHP_EOL;');
-
-        if (defined('PHP_WINDOWS_VERSION_BUILD')) {
-            $testCwd = 'C:\\';
-        } else {
-        	$testCwd = '/';
-        }
+        $cwd = defined('PHP_WINDOWS_VERSION_BUILD') ? 'C:\\' : '/';
 
         $loop = $this->createLoop();
-        $process = new Process($cmd, $testCwd);
+        $process = new Process($cmd, $cwd);
 
         $output = '';
 
@@ -125,7 +120,7 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
 
         $loop->run();
 
-        $this->assertSame($testCwd . PHP_EOL, $output);
+        $this->assertSame($cwd . PHP_EOL, $output);
     }
 
     public function testProcessWithEnv()
@@ -193,7 +188,7 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
     public function testStartInvalidProcess()
     {
         if (defined('PHP_WINDOWS_VERSION_BUILD')) {
-            $this->markTestSkipped('Windows does not have an executable flag. This test does not make sense on Windows.');
+            $this->markTestSkipped('Windows does not have an executable flag.');
         }
 
         $cmd = tempnam(sys_get_temp_dir(), 'react');
@@ -321,26 +316,16 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
         $this->assertFalse($process->isTerminated());
     }
 
-    public function outputSizeProvider() {
-        return [ [1000, 5], [10000, 5], [100000, 5] ];
-    }
-
     /**
-     * @dataProvider outputSizeProvider
+     * @dataProvider provideOutputSizeAndExpectedMaxDuration
      */
-    public function testProcessOutputOfSize($size, $expectedMaxDuration = 5)
+    public function testProcessWithFixedOutputSize($size, $expectedMaxDuration = 5)
     {
-    	// Note: very strange behaviour of Windows (PHP 5.5.6):
-    	// on a 1000 long string, Windows succeeds.
-    	// on a 10000 long string, Windows fails to output anything.
-    	// On a 100000 long string, it takes a lot of time but succeeds.
-        $cmd = $this->getPhpBinary() . ' -r ' . escapeshellarg('echo str_repeat(\'o\', '.$size.'), PHP_EOL;');
-
-        if (defined('PHP_WINDOWS_VERSION_BUILD')) {
-            // Windows madness! for some obscure reason, the whole command lines needs to be
-            // wrapped in quotes (?!?)
-            $cmd = '"'.$cmd.'"';
-        }
+        // Note: very strange behaviour of Windows (PHP 5.5.6):
+        // on a 1000 long string, Windows succeeds.
+        // on a 10000 long string, Windows fails to output anything.
+        // On a 100000 long string, it takes a lot of time but succeeds.
+        $cmd = $this->getPhpCommandLine(sprintf('echo str_repeat("o", %d), PHP_EOL;', $size));
 
         $loop = $this->createLoop();
         $process = new Process($cmd);
@@ -354,17 +339,25 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
             });
         });
 
-        $startTime = time();
-
+        $startTime = microtime(true);
         $loop->run();
+        $endTime = microtime(true);
 
-        $endTime = time();
+        $expectedOutput = str_repeat('o', $size) . PHP_EOL;
 
-        $this->assertEquals($size + strlen(PHP_EOL), strlen($output));
-        $this->assertSame(str_repeat('o', $size) . PHP_EOL, $output);
+        $this->assertEquals(strlen($expectedOutput), strlen($output));
+        $this->assertSame($expectedOutput, $output);
         $this->assertLessThanOrEqual($expectedMaxDuration, $endTime - $startTime, "Process took longer than expected.");
     }
 
+    public function provideOutputSizeAndExpectedMaxDuration()
+    {
+        return [
+            [1000, 5],
+            [10000, 5],
+            [100000, 5],
+        ];
+    }
 
     /**
      * Execute a callback at regular intervals until it returns successfully or
@@ -404,6 +397,16 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
 
     private function getPhpCommandLine($phpCode)
     {
-        return $this->getPhpBinary() . ' -r ' . escapeshellarg($phpCode);
+        /* The following is a suitable workaround for Windows given some
+         * escapeshellarg() incompatibilies in older PHP versions and knowledge
+         * that we're only escaping echo statements destined for "php -r".
+         *
+         * See: http://php.net/manual/en/function.escapeshellarg.php#114873
+         */
+        $phpCode = defined('PHP_WINDOWS_VERSION_BUILD')
+            ? '"' . addcslashes($phpCode, '\\"') . '"'
+            : escapeshellarg($phpCode);
+
+        return $this->getPhpBinary() . ' -r ' . $phpCode;
     }
 }
