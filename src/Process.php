@@ -62,7 +62,7 @@ class Process extends EventEmitter
             }
         }
 
-        $this->options = $options;
+        $this->options = array_merge(['bypass_shell' => true], $options);
         $this->enhanceSigchildCompatibility = $this->isSigchildEnabled();
     }
 

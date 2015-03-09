@@ -71,7 +71,7 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
         $cmd = $this->getPhpCommandLine('echo getcwd(), PHP_EOL, count($_SERVER), PHP_EOL;');
 
         $loop = $this->createLoop();
-        $process = new Process($cmd, null, null, array("bypass_shell"=>true));
+        $process = new Process($cmd);
 
         $output = '';
         $error = '';
@@ -112,7 +112,7 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
         }
 
         $loop = $this->createLoop();
-        $process = new Process($cmd, $testCwd, null, array("bypass_shell"=>true));
+        $process = new Process($cmd, $testCwd);
 
         $output = '';
 
@@ -143,7 +143,7 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
         }
 
         $loop = $this->createLoop();
-        $process = new Process($cmd, null, array('foo' => 'bar'), array("bypass_shell"=>true));
+        $process = new Process($cmd, null, array('foo' => 'bar'));
 
         $output = '';
 
