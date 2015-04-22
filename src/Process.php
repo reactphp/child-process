@@ -106,10 +106,6 @@ class Process extends EventEmitter
         $this->stdout = new Stream($this->pipes[1], $loop);
         $this->stderr = new Stream($this->pipes[2], $loop);
 
-        foreach ($this->pipes as $pipe) {
-            stream_set_blocking($pipe, 0);
-        }
-
         $loop->addPeriodicTimer($interval, function (Timer $timer) {
             if (!$this->isRunning()) {
                 $this->close();
