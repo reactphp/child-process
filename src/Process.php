@@ -101,22 +101,36 @@ class Process extends EventEmitter
             throw new \RuntimeException('Unable to launch a new process.');
         }
 
+        $closeCount = 0;
+
+        $streamCloseHandler = function (Stream $stream) use (&$closeCount, $loop, $interval) {
+            $closeCount++;
+
+            if ($closeCount < 2) {
+                return;
+            }
+
+            $loop->addPeriodicTimer($interval, function (Timer $timer) {
+                if (!$this->isRunning()) {
+                    $this->close();
+                    $timer->cancel();
+                    $this->emit('exit', array($this->getExitCode(), $this->getTermSignal()));
+                }
+            });
+
+        };
+
         $this->stdin  = new Stream($this->pipes[0], $loop);
         $this->stdin->pause();
         $this->stdout = new Stream($this->pipes[1], $loop);
+        $this->stdout->on('close', $streamCloseHandler);
         $this->stderr = new Stream($this->pipes[2], $loop);
+        $this->stderr->on('close', $streamCloseHandler);
 
         foreach ($this->pipes as $pipe) {
             stream_set_blocking($pipe, 0);
         }
 
-        $loop->addPeriodicTimer($interval, function (Timer $timer) {
-            if (!$this->isRunning()) {
-                $this->close();
-                $timer->cancel();
-                $this->emit('exit', array($this->getExitCode(), $this->getTermSignal()));
-            }
-        });
     }
 
     /**
