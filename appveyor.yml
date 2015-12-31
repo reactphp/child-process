@@ -33,6 +33,7 @@ install:
     - appveyor DownloadFile https://getcomposer.org/composer.phar
     - cd c:\projects\reactphp-child-process
     - composer install --no-progress
+    - composer require phpunit/phpunit
 
 ## Run the actual test
 test_script:
