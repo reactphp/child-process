@@ -4,7 +4,7 @@ namespace React\ChildProcess;
 
 use Evenement\EventEmitter;
 use React\EventLoop\LoopInterface;
-use React\EventLoop\Timer\Timer;
+use React\EventLoop\Timer\TimerInterface;
 use React\Stream\Stream;
 
 /**
@@ -106,7 +106,7 @@ class Process extends EventEmitter
         $this->stdout = new Stream($this->pipes[1], $loop);
         $this->stderr = new Stream($this->pipes[2], $loop);
 
-        $loop->addPeriodicTimer($interval, function (Timer $timer) {
+        $loop->addPeriodicTimer($interval, function (TimerInterface $timer) {
             if (!$this->isRunning()) {
                 $this->close();
                 $timer->cancel();
