@@ -110,7 +110,7 @@ class Process extends EventEmitter
                 return;
             }
 
-            $loop->addPeriodicTimer($interval, function (Timer $timer) {
+            $loop->addPeriodicTimer($interval, function (TimerInterface $timer) {
                 if (!$this->isRunning()) {
                     $this->close();
                     $timer->cancel();
