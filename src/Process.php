@@ -4,7 +4,7 @@ namespace React\ChildProcess;
 
 use Evenement\EventEmitter;
 use React\EventLoop\LoopInterface;
-use React\EventLoop\Timer\Timer;
+use React\EventLoop\Timer\TimerInterface;
 use React\Stream\Stream;
 
 /**
