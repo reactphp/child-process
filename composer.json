@@ -14,10 +14,5 @@
     },
     "autoload": {
         "psr-4": { "React\\ChildProcess\\": "src" }
-    },
-    "extra": {
-        "branch-alias": {
-            "dev-master": "0.5-dev"
-        }
     }
 }
