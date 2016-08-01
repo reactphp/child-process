@@ -298,6 +298,46 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
         $this->assertFalse($process->isTerminated());
     }
 
+    public function testIssue18() {
+        $loop = $this->createLoop();
+
+        $testString = 'x';
+
+        $process = new Process($this->getPhpBinary() . " -r 'echo \"$testString\";'");
+
+        $stdOut = '';
+        $stdErr = '';
+
+        $process->on(
+            'exit',
+            function ($exitCode) use (&$stdOut, &$stdErr, $testString) {
+                $this->assertEquals(0, $exitCode, "Exit code is 0");
+
+                $this->assertEquals($testString, $stdOut);
+            }
+        );
+
+        $process->start($loop);
+
+        $process->stdout->on(
+            'data',
+            function ($output) use (&$stdOut) {
+                $stdOut .= $output;
+            }
+        );
+        $process->stderr->on(
+            'data',
+            function ($output) use (&$stdErr) {
+                $stdErr .= $output;
+            }
+        );
+
+        $loop->tick();
+        sleep(1); // comment this line out and it works fine
+
+        $loop->run();
+    }
+
     /**
      * Execute a callback at regular intervals until it returns successfully or
      * a timeout is reached.
