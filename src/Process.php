@@ -181,6 +181,10 @@ class Process extends EventEmitter
      */
     public function terminate($signal = null)
     {
+        if ($this->process === null) {
+            return false;
+        }
+
         if ($signal !== null) {
             return proc_terminate($this->process, $signal);
         }
