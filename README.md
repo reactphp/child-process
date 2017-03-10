@@ -11,6 +11,18 @@ Child processes launched may be signaled and will emit an
 Additionally, process I/O streams (i.e. STDIN, STDOUT, STDERR) are exposed
 as [Streams](https://github.com/reactphp/stream).
 
+**Table of contents**
+
+* [Processes](#processes)
+  * [EventEmitter Events](#eventemitter-events)
+  * [Methods](#methods)
+  * [Stream Properties](#stream-properties)
+* [Usage](#usage)
+  * [Prepending Commands with `exec`](#prepending-commands-with-exec)
+  * [Sigchild Compatibility](#sigchild-compatibility)
+  * [Command Chaining](#command-chaining)
+* [Tests](#tests)
+
 ## Processes
 
 ### EventEmitter Events
