@@ -10,6 +10,7 @@
         "react/stream": "~0.4.2"
     },
     "require-dev": {
+        "phpunit/phpunit": "^5.0 || ^4.8.10",
         "sebastian/environment": "~1.0"
     },
     "autoload": {

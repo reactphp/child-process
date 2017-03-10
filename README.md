@@ -93,3 +93,18 @@ process in a chain ends, which would complicate working with I/O streams. As an
 alternative, considering launching one process at a time and listening on its
 `exit` event to conditionally start the next process in the chain. This will
 give you an opportunity to configure the subsequent process' I/O streams.
+
+## Tests
+
+To run the test suite, you first need to clone this repo and then install all
+dependencies [through Composer](http://getcomposer.org):
+
+```bash
+$ composer install
+```
+
+To run the test suite, go to the project root and run:
+
+```bash
+$ php vendor/bin/phpunit
+```
