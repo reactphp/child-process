@@ -4,15 +4,12 @@
 
 Library for executing child processes.
 
-## Introduction
-
-This library integrates the
-[Program Execution](http://php.net/manual/en/book.exec.php) extension in PHP
-with React's event loop.
-
-Child processes launched within the event loop may be signaled and will emit an
-`exit` event upon termination. Additionally, process I/O streams (i.e. stdin,
-stdout, stderr) are registered with the loop.
+This library integrates [Program Execution](http://php.net/manual/en/book.exec.php)
+with the [EventLoop](https://github.com/reactphp/event-loop).
+Child processes launched may be signaled and will emit an
+`exit` event upon termination.
+Additionally, process I/O streams (i.e. STDIN, STDOUT, STDERR) are exposed
+as [Streams](https://github.com/reactphp/stream).
 
 ## Processes
 
@@ -39,6 +36,36 @@ Once a process terminates, the streams will become closed but not unset.
 * `$stdin`
 * `$stdout`
 * `$stderr`
+
+Each of these implement the underlying
+[`DuplexStreamInterface`](https://github.com/reactphp/stream#duplexstreaminterface)
+and you can use any of its events and methods as usual:
+
+```php
+$process->stdout->on('data', function ($chunk) {
+    echo $chunk;
+});
+
+$process->stdout->on('end', function () {
+    echo 'ended';
+});
+
+$process->stdout->on('error', function (Exception $e) {
+    echo 'error: ' . $e->getMessage();
+});
+
+$process->stdout->on('close', function () {
+    echo 'closed';
+});
+
+$process->stdin->write($data);
+$process->stdin->end($data = null);
+$process->stdin->close();
+// …
+```
+
+For more details, see the
+[`DuplexStreamInterface`](https://github.com/reactphp/stream#duplexstreaminterface).
 
 ## Usage
 ```php
