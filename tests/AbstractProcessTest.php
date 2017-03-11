@@ -66,6 +66,46 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
         $this->assertNull($process->getTermSignal());
     }
 
+    public function testReceivesProcessStdoutFromEcho()
+    {
+        $cmd = 'echo test';
+
+        $loop = $this->createLoop();
+        $process = new Process($cmd);
+        $process->start($loop);
+
+        $buffer = '';
+        $process->stdout->on('data', function ($data) use (&$buffer) {
+            $buffer .= $data;
+        });
+
+        $loop->run();
+
+        $this->assertEquals('test', rtrim($buffer));
+    }
+
+    public function testReceivesProcessStdoutFromDd()
+    {
+        if (!file_exists('/dev/zero')) {
+            $this->markTestSkipped('Unable to read from /dev/zero, Windows?');
+        }
+
+        $cmd = 'dd if=/dev/zero bs=12345 count=1234';
+
+        $loop = $this->createLoop();
+        $process = new Process($cmd);
+        $process->start($loop);
+
+        $bytes = 0;
+        $process->stdout->on('data', function ($data) use (&$bytes) {
+            $bytes += strlen($data);
+        });
+
+        $loop->run();
+
+        $this->assertEquals(12345 * 1234, $bytes);
+    }
+
     public function testProcessWithDefaultCwdAndEnv()
     {
         $cmd = $this->getPhpBinary() . ' -r ' . escapeshellarg('echo getcwd(), PHP_EOL, count($_SERVER), PHP_EOL;');
