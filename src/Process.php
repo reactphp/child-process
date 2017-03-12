@@ -103,21 +103,21 @@ class Process extends EventEmitter
 
         $closeCount = 0;
 
-        $streamCloseHandler = function () use (&$closeCount, $loop, $interval) {
+        $that = $this;
+        $streamCloseHandler = function () use (&$closeCount, $loop, $interval, $that) {
             $closeCount++;
 
             if ($closeCount < 2) {
                 return;
             }
 
-            $loop->addPeriodicTimer($interval, function (TimerInterface $timer) {
-                if (!$this->isRunning()) {
-                    $this->close();
+            $loop->addPeriodicTimer($interval, function (TimerInterface $timer) use ($that) {
+                if (!$that->isRunning()) {
+                    $that->close();
                     $timer->cancel();
-                    $this->emit('exit', array($this->getExitCode(), $this->getTermSignal()));
+                    $that->emit('exit', array($that->getExitCode(), $that->getTermSignal()));
                 }
             });
-
         };
 
         $this->stdin  = new Stream($this->pipes[0], $loop);
@@ -126,6 +126,13 @@ class Process extends EventEmitter
         $this->stdout->on('close', $streamCloseHandler);
         $this->stderr = new Stream($this->pipes[2], $loop);
         $this->stderr->on('close', $streamCloseHandler);
+
+        // legacy PHP < 5.4 SEGFAULTs for unbuffered, non-blocking reads
+        // work around by enabling read buffer again
+        if (PHP_VERSION_ID < 50400) {
+            stream_set_read_buffer($this->pipes[1], 1);
+            stream_set_read_buffer($this->pipes[2], 1);
+        }
     }
 
     /**

@@ -66,6 +66,46 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
         $this->assertNull($process->getTermSignal());
     }
 
+    public function testReceivesProcessStdoutFromEcho()
+    {
+        $cmd = 'echo test';
+
+        $loop = $this->createLoop();
+        $process = new Process($cmd);
+        $process->start($loop);
+
+        $buffer = '';
+        $process->stdout->on('data', function ($data) use (&$buffer) {
+            $buffer .= $data;
+        });
+
+        $loop->run();
+
+        $this->assertEquals('test', rtrim($buffer));
+    }
+
+    public function testReceivesProcessStdoutFromDd()
+    {
+        if (!file_exists('/dev/zero')) {
+            $this->markTestSkipped('Unable to read from /dev/zero, Windows?');
+        }
+
+        $cmd = 'dd if=/dev/zero bs=12345 count=1234';
+
+        $loop = $this->createLoop();
+        $process = new Process($cmd);
+        $process->start($loop);
+
+        $bytes = 0;
+        $process->stdout->on('data', function ($data) use (&$bytes) {
+            $bytes += strlen($data);
+        });
+
+        $loop->run();
+
+        $this->assertEquals(12345 * 1234, $bytes);
+    }
+
     public function testProcessWithDefaultCwdAndEnv()
     {
         $cmd = $this->getPhpBinary() . ' -r ' . escapeshellarg('echo getcwd(), PHP_EOL, count($_SERVER), PHP_EOL;');
@@ -268,21 +308,22 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
             $termSignal = func_get_arg(1);
         });
 
-        $loop->addTimer(0.001, function(Timer $timer) use ($process) {
+        $that = $this;
+        $loop->addTimer(0.001, function(Timer $timer) use ($process, $that) {
             $process->start($timer->getLoop());
             $process->terminate(SIGSTOP);
 
-            $this->assertSoon(function() use ($process) {
-                $this->assertTrue($process->isStopped());
-                $this->assertTrue($process->isRunning());
-                $this->assertEquals(SIGSTOP, $process->getStopSignal());
+            $that->assertSoon(function() use ($process, $that) {
+                $that->assertTrue($process->isStopped());
+                $that->assertTrue($process->isRunning());
+                $that->assertEquals(SIGSTOP, $process->getStopSignal());
             });
 
             $process->terminate(SIGCONT);
 
-            $this->assertSoon(function() use ($process) {
-                $this->assertFalse($process->isStopped());
-                $this->assertEquals(SIGSTOP, $process->getStopSignal());
+            $that->assertSoon(function() use ($process, $that) {
+                $that->assertFalse($process->isStopped());
+                $that->assertEquals(SIGSTOP, $process->getStopSignal());
             });
         });
 
@@ -308,12 +349,13 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
         $stdOut = '';
         $stdErr = '';
 
+        $that = $this;
         $process->on(
             'exit',
-            function ($exitCode) use (&$stdOut, &$stdErr, $testString) {
-                $this->assertEquals(0, $exitCode, "Exit code is 0");
+            function ($exitCode) use (&$stdOut, &$stdErr, $testString, $that) {
+                $that->assertEquals(0, $exitCode, "Exit code is 0");
 
-                $this->assertEquals($testString, $stdOut);
+                $that->assertEquals($testString, $stdOut);
             }
         );
 
