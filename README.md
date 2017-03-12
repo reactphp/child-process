@@ -13,17 +13,38 @@ as [Streams](https://github.com/reactphp/stream).
 
 **Table of contents**
 
+* [Quickstart example](#quickstart-example)
 * [Processes](#processes)
   * [EventEmitter Events](#eventemitter-events)
   * [Methods](#methods)
   * [Stream Properties](#stream-properties)
-* [Usage](#usage)
   * [Prepending Commands with `exec`](#prepending-commands-with-exec)
   * [Sigchild Compatibility](#sigchild-compatibility)
   * [Command Chaining](#command-chaining)
 * [Install](#install)
 * [Tests](#tests)
 * [License](#license)
+
+## Quickstart example
+
+```php
+$loop = React\EventLoop\Factory::create();
+
+$process = new React\ChildProcess\Process('echo foo');
+$process->start($loop);
+
+$process->stdout->on('data', function ($chunk) {
+    echo $chunk;
+});
+
+$process->on('exit', function($exitCode, $termSignal) {
+    echo 'Process exited with code ' . $exitCode . PHP_EOL;
+});
+
+$loop->run();
+```
+
+See also the [examples](examples).
 
 ## Processes
 
@@ -81,26 +102,6 @@ $process->stdin->close();
 For more details, see the
 [`DuplexStreamInterface`](https://github.com/reactphp/stream#duplexstreaminterface).
 
-## Usage
-```php
-    $loop = React\EventLoop\Factory::create();
-
-    $process = new React\ChildProcess\Process('echo foo');
-
-    $process->on('exit', function($exitCode, $termSignal) {
-        // ...
-    });
-
-    $loop->addTimer(0.001, function($timer) use ($process) {
-        $process->start($timer->getLoop());
-
-        $process->stdout->on('data', function($output) {
-            // ...
-        });
-    });
-
-    $loop->run();
-```
 ### Prepending Commands with `exec`
 
 Symfony pull request [#5759](https://github.com/symfony/symfony/issues/5759)

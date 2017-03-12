@@ -16,3 +16,4 @@ install:
   
 script:
   - vendor/bin/phpunit --coverage-text
+  - php examples/13-benchmark-throughput.php
