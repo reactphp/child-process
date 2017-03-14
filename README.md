@@ -225,7 +225,7 @@ The recommended way to install this library is [through Composer](http://getcomp
 This will install the latest supported version:
 
 ```bash
-$ composer require react/child-process:^0.4.2
+$ composer require react/child-process:^0.4.3
 ```
 
 More details about version upgrades can be found in the [CHANGELOG](CHANGELOG.md).

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.3 (2017-03-14)
+
+* Ease getting started by improving documentation and adding examples
+  (#33 and #34 by @clue)
+
+* First class support for PHP 5.3 through PHP 7.1 and HHVM
+  (#29 by @clue and #32 by @WyriHaximus)
+
 ## 0.4.2 (2017-03-10)
 
 * Feature: Forward compatibility with Stream v0.5
