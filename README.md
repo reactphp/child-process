@@ -18,9 +18,8 @@ as [Streams](https://github.com/reactphp/stream).
   * [EventEmitter Events](#eventemitter-events)
   * [Methods](#methods)
   * [Stream Properties](#stream-properties)
-  * [Prepending Commands with `exec`](#prepending-commands-with-exec)
+  * [Command](#command)
   * [Sigchild Compatibility](#sigchild-compatibility)
-  * [Command Chaining](#command-chaining)
 * [Install](#install)
 * [Tests](#tests)
 * [License](#license)
@@ -102,15 +101,106 @@ $process->stdin->close();
 For more details, see the
 [`DuplexStreamInterface`](https://github.com/reactphp/stream#duplexstreaminterface).
 
-### Prepending Commands with `exec`
+### Command
 
-Symfony pull request [#5759](https://github.com/symfony/symfony/issues/5759)
-documents a caveat with the
-[Program Execution](http://php.net/manual/en/book.exec.php) extension. PHP will
-launch processes via `sh`, which obfuscates the underlying process' PID and
-complicates signaling (our process becomes a child of `sh`). As a work-around,
-prepend the command string with `exec`, which will cause the `sh` process to be
-replaced by our process.
+The `Process` class allows you to pass any kind of command line string:
+
+```php
+$process = new Process('echo test');
+```
+
+By default, PHP will launch processes by wrapping the given command line string
+in a `sh` command, so that the above example will actually execute
+`sh -c echo test` under the hood.
+
+This is a very useful feature because it does not only allow you to pass single
+commands, but actually allows you to pass any kind of shell command line and
+launch multiple sub-commands using command chains (with `&&`, `||`, `;` and
+others) and allows you to redirect STDIO streams (with `2>&1` and family).
+This can be used to pass complete command lines and receive the resulting STDIO
+streams from the wrapping shell command like this:
+
+```php
+$process = new Process('echo run && demo || echo failed');
+```
+
+In other words, the underlying shell is responsible for managing this command
+line and launching the individual sub-commands and connecting their STDIO
+streams as appropriate.
+This implies that the `Process` class will only receive the resulting STDIO
+streams from the wrapping shell, which will thus contain the complete
+input/output with no way to discern the input/output of single sub-commands.
+
+If you want to discern the output of single sub-commands, you may want to
+implement some higher-level protocol logic, such as printing an explicit
+boundary between each sub-command like this:
+
+```php
+$process = new Process('cat first && echo --- && cat second');
+```
+
+As an alternative, considering launching one process at a time and listening on
+its `exit` event to conditionally start the next process in the chain.
+This will give you an opportunity to configure the subsequent process I/O streams:
+
+```php
+$first = new Process('cat first');
+$first->start($loop);
+
+$first->on('exit', function () use ($loop) {
+    $second = new Process('cat second');
+    $second->start($loop);
+});
+```
+
+Keep in mind that PHP uses the shell wrapper for ALL command lines.
+While this may seem reasonable for more complex command lines, this actually
+also applies to running the most simple single command:
+
+```php
+$process = new Process('yes');
+```
+
+This will actually spawn a command hierarchy similar to this:
+
+```
+5480 … \_ php example.php
+5481 …    \_ sh -c yes
+5482 …        \_ yes
+```
+
+This means that trying to get the underlying process PID or sending signals
+will actually target the wrapping shell, which may not be the desired result
+in many cases.
+
+If you do not want this wrapping shell process to show up, you can simply
+prepend the command string with `exec`, which will cause the wrapping shell
+process to be replaced by our process:
+
+```php
+$process = new Process('exec yes');
+```
+
+This will show a resulting command hierarchy similar to this:
+
+```
+5480 … \_ php example.php
+5481 …    \_ yes
+```
+
+This means that trying to get the underlying process PID and sending signals
+will now target the actual command as expected.
+
+Note that in this case, the command line will not be run in a wrapping shell.
+This implies that when using `exec`, there's no way to pass command lines such
+as those containing command chains or redirected STDIO streams.
+
+As a rule of thumb, most commands will likely run just fine with the wrapping
+shell.
+If you pass a complete command line (or are unsure), you SHOULD most likely keep
+the wrapping shell.
+If you want to pass an invidual command only, you MAY want to consider
+prepending the command string with `exec` to avoid the wrapping shell.
 
 ### Sigchild Compatibility
 
@@ -126,15 +216,6 @@ of the actual exit code.
 
 **Note:** This functionality was taken from Symfony's
 [Process](https://github.com/symfony/process) compoment.
-
-### Command Chaining
-
-Command chaning with `&&` or `;`, while possible with `proc_open()`, should not
-be used with this component. There is currently no way to discern when each
-process in a chain ends, which would complicate working with I/O streams. As an
-alternative, considering launching one process at a time and listening on its
-`exit` event to conditionally start the next process in the chain. This will
-give you an opportunity to configure the subsequent process' I/O streams.
 
 ## Install
 

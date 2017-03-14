@@ -106,6 +106,45 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(12345 * 1234, $bytes);
     }
 
+    public function testProcessPidNotSameDueToShellWrapper()
+    {
+        $cmd = $this->getPhpBinary() . ' -r ' . escapeshellarg('echo getmypid();');
+
+        $loop = $this->createLoop();
+        $process = new Process($cmd, '/');
+        $process->start($loop);
+
+        $output = '';
+        $process->stdout->on('data', function ($data) use (&$output) {
+            $output .= $data;
+        });
+
+        $loop->run();
+
+        $this->assertNotEquals('', $output);
+        $this->assertNotNull($process->getPid());
+        $this->assertNotEquals($process->getPid(), $output);
+    }
+
+    public function testProcessPidSameWithExec()
+    {
+        $cmd = 'exec ' . $this->getPhpBinary() . ' -r ' . escapeshellarg('echo getmypid();');
+
+        $loop = $this->createLoop();
+        $process = new Process($cmd, '/');
+        $process->start($loop);
+
+        $output = '';
+        $process->stdout->on('data', function ($data) use (&$output) {
+            $output .= $data;
+        });
+
+        $loop->run();
+
+        $this->assertNotNull($process->getPid());
+        $this->assertEquals($process->getPid(), $output);
+    }
+
     public function testProcessWithDefaultCwdAndEnv()
     {
         $cmd = $this->getPhpBinary() . ' -r ' . escapeshellarg('echo getcwd(), PHP_EOL, count($_SERVER), PHP_EOL;');
