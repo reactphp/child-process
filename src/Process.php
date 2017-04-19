@@ -192,11 +192,14 @@ class Process extends EventEmitter
      */
     public function terminate($signal = null)
     {
-        if ($signal !== null) {
-            return proc_terminate($this->process, $signal);
+        if ($signal === null) {
+            $signal = SIGTERM;
         }
-
-        return proc_terminate($this->process);
+        $ret = proc_terminate($this->process, $signal);
+        // process termination doesn't close streams, do manually
+        $this->stdout->close();
+        $this->stderr->close();
+        return $ret;
     }
 
     /**
