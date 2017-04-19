@@ -5,7 +5,10 @@ namespace React\ChildProcess;
 use Evenement\EventEmitter;
 use React\EventLoop\LoopInterface;
 use React\EventLoop\Timer\TimerInterface;
-use React\Stream\Stream;
+use React\Stream\ReadableResourceStream;
+use React\Stream\ReadableStreamInterface;
+use React\Stream\WritableResourceStream;
+use React\Stream\WritableStreamInterface;
 
 /**
  * Process component.
@@ -17,8 +20,17 @@ use React\Stream\Stream;
  */
 class Process extends EventEmitter
 {
+    /**
+     * @var WritableStreamInterface
+     */
     public $stdin;
+    /**
+     * @var ReadableStreamInterface
+     */
     public $stdout;
+    /**
+     * @var ReadableStreamInterface
+     */
     public $stderr;
 
     private $cmd;
@@ -44,7 +56,7 @@ class Process extends EventEmitter
     * @param string $cwd     Current working directory or null to inherit
     * @param array  $env     Environment variables or null to inherit
     * @param array  $options Options for proc_open()
-    * @throws RuntimeException When proc_open() is not installed
+    * @throws \RuntimeException When proc_open() is not installed
     */
     public function __construct($cmd, $cwd = null, array $env = null, array $options = array())
     {
@@ -70,11 +82,11 @@ class Process extends EventEmitter
      * Start the process.
      *
      * After the process is started, the standard IO streams will be constructed
-     * and available via public properties. STDIN will be paused upon creation.
+     * and available via public properties.
      *
      * @param LoopInterface $loop        Loop interface for stream construction
      * @param float         $interval    Interval to periodically monitor process state (seconds)
-     * @throws RuntimeException If the process is already running or fails to start
+     * @throws \RuntimeException If the process is already running or fails to start
      */
     public function start(LoopInterface $loop, $interval = 0.1)
     {
@@ -120,11 +132,10 @@ class Process extends EventEmitter
             });
         };
 
-        $this->stdin  = new Stream($this->pipes[0], $loop);
-        $this->stdin->pause();
-        $this->stdout = new Stream($this->pipes[1], $loop);
+        $this->stdin  = new WritableResourceStream($this->pipes[0], $loop);
+        $this->stdout = new ReadableResourceStream($this->pipes[1], $loop);
         $this->stdout->on('close', $streamCloseHandler);
-        $this->stderr = new Stream($this->pipes[2], $loop);
+        $this->stderr = new ReadableResourceStream($this->pipes[2], $loop);
         $this->stderr->on('close', $streamCloseHandler);
 
         // legacy PHP < 5.4 SEGFAULTs for unbuffered, non-blocking reads
@@ -217,7 +228,7 @@ class Process extends EventEmitter
      *
      * @param boolean $enhance
      * @return self
-     * @throws RuntimeException If the process is already running
+     * @throws \RuntimeException If the process is already running
      */
     public final function setEnhanceSigchildCompatibility($enhance)
     {

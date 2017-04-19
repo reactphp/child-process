@@ -3,11 +3,15 @@
 namespace React\Tests\ChildProcess;
 
 use React\ChildProcess\Process;
+use React\EventLoop\LoopInterface;
 use React\EventLoop\Timer\Timer;
 use SebastianBergmann\Environment\Runtime;
 
 abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
 {
+    /**
+     * @return LoopInterface
+     */
     abstract public function createLoop();
 
     public function testGetEnhanceSigchildCompatibility()
@@ -22,7 +26,7 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException RuntimeException
+     * @expectedException \RuntimeException
      */
     public function testSetEnhanceSigchildCompatibilityCannotBeCalledIfProcessIsRunning()
     {
@@ -53,7 +57,7 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
     /**
      * @depends testIsRunning
      */
-    public function testGetExitCodeWhenRunning($process)
+    public function testGetExitCodeWhenRunning(Process $process)
     {
         $this->assertNull($process->getExitCode());
     }
@@ -61,7 +65,7 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
     /**
      * @depends testIsRunning
      */
-    public function testGetTermSignalWhenRunning($process)
+    public function testGetTermSignalWhenRunning(Process $process)
     {
         $this->assertNull($process->getTermSignal());
     }
@@ -274,7 +278,7 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException RuntimeException
+     * @expectedException \RuntimeException
      */
     public function testStartAlreadyRunningProcess()
     {
@@ -423,7 +427,7 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
      * Execute a callback at regular intervals until it returns successfully or
      * a timeout is reached.
      *
-     * @param Closure $callback Callback with one or more assertions
+     * @param \Closure $callback Callback with one or more assertions
      * @param integer $timeout  Time limit for callback to succeed (milliseconds)
      * @param integer $interval Interval for retrying the callback (milliseconds)
      * @throws PHPUnit_Framework_ExpectationFailedException Last exception raised by the callback
