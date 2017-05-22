@@ -106,7 +106,9 @@ class Process extends EventEmitter
         $that = $this;
         $streamCloseHandler = function () use (&$closeCount, $loop, $interval, $that) {
             $closeCount++;
-
+            
+            echo '$streamCloseHandler\n';
+            
             if ($closeCount < 2) {
                 return;
             }
