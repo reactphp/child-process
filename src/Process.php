@@ -424,6 +424,9 @@ class Process extends EventEmitter
         }
 
         $this->status = proc_get_status($this->process);
+        
+        echo "proc_get_status\n";
+        print_r($this->status);
 
         if ($this->status === false) {
             throw new \UnexpectedValueException('proc_get_status() failed');
