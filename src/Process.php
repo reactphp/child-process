@@ -149,7 +149,7 @@ class Process extends EventEmitter
     public function onEnterIdle(){
         echo PHP_EOL.PHP_EOL.date("onEnterIdle :: H:i:s.v").PHP_EOL.PHP_EOL;
         
-        if(!$this->terminated && !$that->isRunning()){
+        if(!$this->terminated && !$this->isRunning()){
             $this->close();
         }
         
@@ -163,7 +163,7 @@ class Process extends EventEmitter
     public function onSignalInterrupted(){
         echo PHP_EOL.PHP_EOL.date("onSignalInterrupted :: H:i:s.v").PHP_EOL.PHP_EOL;
         
-        if(!$this->terminated && !$that->isRunning()){
+        if(!$this->terminated && !$this->isRunning()){
             $this->close();
         }
         
