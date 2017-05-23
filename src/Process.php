@@ -107,7 +107,7 @@ class Process extends EventEmitter
         $streamCloseHandler = function () use (&$closeCount, $loop, $interval, $that) {
             $closeCount++;
             
-            echo '$streamCloseHandler\n';
+            echo date("H:i:s.v")." streamCloseHandler {$closeCount}\n";
             
             if ($closeCount < 2) {
                 return;
@@ -128,7 +128,9 @@ class Process extends EventEmitter
         $this->stdout->on('close', $streamCloseHandler);
         $this->stderr = new Stream($this->pipes[2], $loop);
         $this->stderr->on('close', $streamCloseHandler);
-
+        
+        $loop->addEnterIdle($this->stdout, array($this, 'onEnterIdle'));
+        
         // legacy PHP < 5.4 SEGFAULTs for unbuffered, non-blocking reads
         // work around by enabling read buffer again
         if (PHP_VERSION_ID < 50400) {
@@ -137,6 +139,13 @@ class Process extends EventEmitter
         }
     }
 
+    public function onEnterIdle(){
+        echo date("H:i:s.v").PHP_EOL;
+        print_r($this->process);
+        print_r($this->isRunning());
+        print_r($this->status);
+    }
+    
     /**
      * Close the process.
      *
