@@ -110,8 +110,6 @@ class Process extends EventEmitter
         $streamCloseHandler = function () use (&$closeCount, $loop, $interval, $that) {
             $closeCount++;
             
-            echo date("H:i:s.v")." streamCloseHandler {$closeCount}\n";
-            
             if ($closeCount < 2) {
                 return;
             }
@@ -147,39 +145,41 @@ class Process extends EventEmitter
     }
 
     public function onEnterIdle(){
-        echo PHP_EOL.PHP_EOL.date("onEnterIdle :: H:i:s.v").PHP_EOL.PHP_EOL;
+        
+        $this->_writeLog("onEnterIdle");
         
         if(!$this->terminated && !$this->isRunning()){
             $this->close();
         }
         
-        print_r($this->process);
-        print_r($this->isRunning());
-        print_r($this->status);
-        echo PHP_EOL.PHP_EOL.date("onEnterIdle :out: H:i:s.v").PHP_EOL.PHP_EOL;
+        $this->_writeLog(print_r($this->process), true);
+        $this->_writeLog(print_r($this->isRunning()), true);
+        $this->_writeLog(print_r($this->status), true);
+        $this->_writeLog("onEnterIdle out");
         
     }
     
     public function onSignalInterrupted(){
-        echo PHP_EOL.PHP_EOL.date("onSignalInterrupted :: H:i:s.v").PHP_EOL.PHP_EOL;
+        $this->_writeLog("onSignalInterrupted");
         
         if(!$this->terminated && !$this->isRunning()){
             $this->close();
         }
         
-        print_r($this->process);
-        print_r($this->isRunning());
-        print_r($this->status);
-        echo PHP_EOL.PHP_EOL.date("onSignalInterrupted :out: H:i:s.v").PHP_EOL.PHP_EOL;
+        $this->_writeLog(print_r($this->process), true);
+        $this->_writeLog(print_r($this->isRunning()), true);
+        $this->_writeLog(print_r($this->status), true);
+        $this->_writeLog("onSignalInterrupted out");
         
     }
     
     public function onWake(){
-        echo PHP_EOL.PHP_EOL.date("onWake :: H:i:s.v").PHP_EOL.PHP_EOL;
-        print_r($this->process);
-        print_r($this->isRunning());
-        print_r($this->status);
-        echo PHP_EOL.PHP_EOL.date("onWake :out: H:i:s.v").PHP_EOL.PHP_EOL;
+        $this->_writeLog("onWake");
+        
+        $this->_writeLog(print_r($this->process), true);
+        $this->_writeLog(print_r($this->isRunning()), true);
+        $this->_writeLog(print_r($this->status), true);
+        $this->_writeLog("onWake out");
         
     }
     
@@ -501,6 +501,15 @@ class Process extends EventEmitter
 
         if (!$this->status['running'] && -1 !== $this->status['exitcode']) {
             $this->exitCode = $this->status['exitcode'];
+        }
+    }
+    
+    function _writeLog($info_){
+        if(defined('_SYSTEMDAEMON')){
+            System_Daemon::log(System_Daemon::LOG_INFO, $info_);
+        }
+        else {
+            echo date("[H:i:s]: ")."{$info_}\n";
         }
     }
 }
