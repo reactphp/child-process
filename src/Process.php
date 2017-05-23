@@ -133,6 +133,8 @@ class Process extends EventEmitter
         $this->stderr->on('close', $streamCloseHandler);
         
         $loop->addEnterIdle($this->stdout, array($this, 'onEnterIdle'));
+        $loop->addSignalInterrupted($this->stdout, array($this, 'onSignalInterrupted'));
+        $loop->addOnWake($this->stdout, array($this, 'onWake'));
         
         $this->loop = $loop;
         
@@ -155,6 +157,29 @@ class Process extends EventEmitter
         print_r($this->isRunning());
         print_r($this->status);
         echo PHP_EOL.PHP_EOL.date("onEnterIdle :out: H:i:s.v").PHP_EOL.PHP_EOL;
+        
+    }
+    
+    public function onSignalInterrupted(){
+        echo PHP_EOL.PHP_EOL.date("onSignalInterrupted :: H:i:s.v").PHP_EOL.PHP_EOL;
+        
+        if(!$this->terminated && !$that->isRunning()){
+            $this->close();
+        }
+        
+        print_r($this->process);
+        print_r($this->isRunning());
+        print_r($this->status);
+        echo PHP_EOL.PHP_EOL.date("onSignalInterrupted :out: H:i:s.v").PHP_EOL.PHP_EOL;
+        
+    }
+    
+    public function onWake(){
+        echo PHP_EOL.PHP_EOL.date("onWake :: H:i:s.v").PHP_EOL.PHP_EOL;
+        print_r($this->process);
+        print_r($this->isRunning());
+        print_r($this->status);
+        echo PHP_EOL.PHP_EOL.date("onWake :out: H:i:s.v").PHP_EOL.PHP_EOL;
         
     }
     
