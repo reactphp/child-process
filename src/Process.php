@@ -133,10 +133,9 @@ class Process extends EventEmitter
         $loop->addSignalInterrupted($this->stdout, array($this, 'onSignalInterrupted'));
         $loop->addOnWake($this->stdout, array($this, 'onWake'));
         
-        pcntl_signal(SIGCHLD, function ($signo, $signinfo) use ($that, $loop) {
+        pcntl_signal(SIGCHLD, function ($signo, $signinfo) use ($that) {
             if (!$that->isRunning()) {
                 $that->close();
-                $loop->cancelTimer($timer);
             }
         }); 
         
