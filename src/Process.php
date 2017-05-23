@@ -145,14 +145,17 @@ class Process extends EventEmitter
     }
 
     public function onEnterIdle(){
+        echo PHP_EOL.PHP_EOL.date("onEnterIdle :: H:i:s.v").PHP_EOL.PHP_EOL;
+        
         if(!$this->terminated && !$that->isRunning()){
             $this->close();
         }
         
-        echo date("H:i:s.v").PHP_EOL;
         print_r($this->process);
         print_r($this->isRunning());
         print_r($this->status);
+        echo PHP_EOL.PHP_EOL.date("onEnterIdle :out: H:i:s.v").PHP_EOL.PHP_EOL;
+        
     }
     
     /**
