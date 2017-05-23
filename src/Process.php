@@ -36,7 +36,10 @@ class Process extends EventEmitter
     private $termSignal;
 
     private static $sigchild;
-
+    
+    private $terminated = false;
+    private $loop;
+    
     /**
     * Constructor.
     *
@@ -131,6 +134,8 @@ class Process extends EventEmitter
         
         $loop->addEnterIdle($this->stdout, array($this, 'onEnterIdle'));
         
+        $this->loop = $loop;
+        
         // legacy PHP < 5.4 SEGFAULTs for unbuffered, non-blocking reads
         // work around by enabling read buffer again
         if (PHP_VERSION_ID < 50400) {
@@ -140,6 +145,10 @@ class Process extends EventEmitter
     }
 
     public function onEnterIdle(){
+        if(!$this->terminated && !$that->isRunning()){
+            $this->close();
+        }
+        
         echo date("H:i:s.v").PHP_EOL;
         print_r($this->process);
         print_r($this->isRunning());
@@ -161,6 +170,8 @@ class Process extends EventEmitter
         $this->stdin->close();
         $this->stdout->close();
         $this->stderr->close();
+        
+        $this->loop->removeEnterIdle($this->stdout);
 
         if ($this->isSigchildEnabled() && $this->enhanceSigchildCompatibility) {
             $this->pollExitCodePipe();
@@ -182,6 +193,10 @@ class Process extends EventEmitter
             $this->exitCode = $this->fallbackExitCode;
             $this->fallbackExitCode = null;
         }
+        
+        $that->emit('exit', array($this->getExitCode(), $this->getTermSignal()));
+        
+        $this->terminated =  true;
     }
 
     /**
@@ -190,15 +205,20 @@ class Process extends EventEmitter
      * @param int $signal Optional signal (default: SIGTERM)
      * @return boolean Whether the signal was sent successfully
      */
-    public function terminate($signal = null)
-    {
-        if ($signal !== null) {
-            return proc_terminate($this->process, $signal);
+    public function terminate($signal = null){
+        if ($signal === null) {
+            $signal = SIGTERM;
         }
 
-        return proc_terminate($this->process);
+        $ret = proc_terminate($this->process, $signal);
+        
+        // process termination doesn't close streams, do manually
+        $this->stdout->close();
+        $this->stderr->close();
+        return $ret;
     }
-
+    
+     
     /**
      * Get the command string used to launch the process.
      *
