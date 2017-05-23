@@ -36,7 +36,10 @@ class Process extends EventEmitter
     private $termSignal;
 
     private static $sigchild;
-
+    
+    private $terminated = false;
+    private $loop;
+    
     /**
     * Constructor.
     *
@@ -106,16 +109,15 @@ class Process extends EventEmitter
         $that = $this;
         $streamCloseHandler = function () use (&$closeCount, $loop, $interval, $that) {
             $closeCount++;
-
+            
             if ($closeCount < 2) {
                 return;
             }
 
-            $loop->addPeriodicTimer($interval, function (TimerInterface $timer) use ($that) {
+            $loop->addPeriodicTimer($interval, function (TimerInterface $timer) use ($that, $loop) {
                 if (!$that->isRunning()) {
                     $that->close();
-                    $timer->cancel();
-                    $that->emit('exit', array($that->getExitCode(), $that->getTermSignal()));
+                    $loop->cancelTimer($timer);
                 }
             });
         };
@@ -126,7 +128,19 @@ class Process extends EventEmitter
         $this->stdout->on('close', $streamCloseHandler);
         $this->stderr = new Stream($this->pipes[2], $loop);
         $this->stderr->on('close', $streamCloseHandler);
-
+        
+        $loop->addEnterIdle($this->stdout, array($this, 'onEnterIdle'));
+        $loop->addSignalInterrupted($this->stdout, array($this, 'onSignalInterrupted'));
+        $loop->addOnWake($this->stdout, array($this, 'onWake'));
+        
+        pcntl_signal(SIGCHLD, function ($signo, $signinfo) use ($that) {
+            if (!$that->isRunning()) {
+                $that->close();
+            }
+        }); 
+        
+        $this->loop = $loop;
+        
         // legacy PHP < 5.4 SEGFAULTs for unbuffered, non-blocking reads
         // work around by enabling read buffer again
         if (PHP_VERSION_ID < 50400) {
@@ -135,6 +149,45 @@ class Process extends EventEmitter
         }
     }
 
+    public function onEnterIdle(){
+        
+        $this->_writeLog("onEnterIdle");
+        
+        if(!$this->terminated && !$this->isRunning()){
+            $this->close();
+        }
+        
+        $this->_writeLog(print_r($this->process), true);
+        $this->_writeLog(print_r($this->isRunning()), true);
+        $this->_writeLog(print_r($this->status), true);
+        $this->_writeLog("onEnterIdle out");
+        
+    }
+    
+    public function onSignalInterrupted(){
+        $this->_writeLog("onSignalInterrupted");
+        
+        if(!$this->terminated && !$this->isRunning()){
+            $this->close();
+        }
+        
+        $this->_writeLog(print_r($this->process), true);
+        $this->_writeLog(print_r($this->isRunning()), true);
+        $this->_writeLog(print_r($this->status), true);
+        $this->_writeLog("onSignalInterrupted out");
+        
+    }
+    
+    public function onWake(){
+        $this->_writeLog("onWake");
+        
+        $this->_writeLog(print_r($this->process), true);
+        $this->_writeLog(print_r($this->isRunning()), true);
+        $this->_writeLog(print_r($this->status), true);
+        $this->_writeLog("onWake out");
+        
+    }
+    
     /**
      * Close the process.
      *
@@ -150,6 +203,8 @@ class Process extends EventEmitter
         $this->stdin->close();
         $this->stdout->close();
         $this->stderr->close();
+        
+        $this->loop->removeEnterIdle($this->stdout);
 
         if ($this->isSigchildEnabled() && $this->enhanceSigchildCompatibility) {
             $this->pollExitCodePipe();
@@ -171,6 +226,10 @@ class Process extends EventEmitter
             $this->exitCode = $this->fallbackExitCode;
             $this->fallbackExitCode = null;
         }
+        
+        $this->emit('exit', array($this->getExitCode(), $this->getTermSignal()));
+        
+        $this->terminated =  true;
     }
 
     /**
@@ -179,15 +238,20 @@ class Process extends EventEmitter
      * @param int $signal Optional signal (default: SIGTERM)
      * @return boolean Whether the signal was sent successfully
      */
-    public function terminate($signal = null)
-    {
-        if ($signal !== null) {
-            return proc_terminate($this->process, $signal);
+    public function terminate($signal = null){
+        if ($signal === null) {
+            $signal = SIGTERM;
         }
 
-        return proc_terminate($this->process);
+        $ret = proc_terminate($this->process, $signal);
+        
+        // process termination doesn't close streams, do manually
+        $this->stdout->close();
+        $this->stderr->close();
+        return $ret;
     }
-
+    
+     
     /**
      * Get the command string used to launch the process.
      *
@@ -424,7 +488,7 @@ class Process extends EventEmitter
         }
 
         $this->status = proc_get_status($this->process);
-
+        
         if ($this->status === false) {
             throw new \UnexpectedValueException('proc_get_status() failed');
         }
@@ -440,5 +504,18 @@ class Process extends EventEmitter
         if (!$this->status['running'] && -1 !== $this->status['exitcode']) {
             $this->exitCode = $this->status['exitcode'];
         }
+    }
+    
+    function _writeLog($info_){
+        echo date("[H:i:s]: ")."{$info_}\n";
+        /*
+        if(defined('_SYSTEMDAEMON')){
+            System_Daemon::log(System_Daemon::LOG_INFO, $info_);
+        }
+        else {
+            echo date("[H:i:s]: ")."{$info_}\n";
+        }
+         * 
+         */
     }
 }
