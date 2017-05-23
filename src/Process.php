@@ -222,7 +222,7 @@ class Process extends EventEmitter
             $this->fallbackExitCode = null;
         }
         
-        $that->emit('exit', array($this->getExitCode(), $this->getTermSignal()));
+        $this->emit('exit', array($this->getExitCode(), $this->getTermSignal()));
         
         $this->terminated =  true;
     }
