@@ -133,6 +133,13 @@ class Process extends EventEmitter
         $loop->addSignalInterrupted($this->stdout, array($this, 'onSignalInterrupted'));
         $loop->addOnWake($this->stdout, array($this, 'onWake'));
         
+        pcntl_signal(SIGCHLD, function (int $signo , mixed $signinfo) use ($that, $loop) {
+            if (!$that->isRunning()) {
+                $that->close();
+                $loop->cancelTimer($timer);
+            }
+        }); 
+        
         $this->loop = $loop;
         
         // legacy PHP < 5.4 SEGFAULTs for unbuffered, non-blocking reads
