@@ -64,16 +64,18 @@ access fields otherwise available through `proc_get_status()`.
 ### Stream Properties
 
 Once a process is started, its I/O streams will be constructed as instances of
-`React\Stream\Stream`. Before `start()` is called, these properties are `null`.
-Once a process terminates, the streams will become closed but not unset.
+`React\Stream\ReadableStreamInterface` and `React\Stream\WritableStreamInterface`. 
+Before `start()` is called, these properties are `null`.Once a process terminates, 
+the streams will become closed but not unset.
 
 * `$stdin`
 * `$stdout`
 * `$stderr`
 
 Each of these implement the underlying
-[`DuplexStreamInterface`](https://github.com/reactphp/stream#duplexstreaminterface)
-and you can use any of its events and methods as usual:
+[`ReadableStreamInterface`](https://github.com/reactphp/stream#readablestreaminterface) or 
+[`WritableStreamInterface`](https://github.com/reactphp/stream#writablestreaminterface) and 
+you can use any of their events and methods as usual:
 
 ```php
 $process->stdout->on('data', function ($chunk) {
@@ -94,12 +96,12 @@ $process->stdout->on('close', function () {
 
 $process->stdin->write($data);
 $process->stdin->end($data = null);
-$process->stdin->close();
 // …
 ```
 
 For more details, see the
-[`DuplexStreamInterface`](https://github.com/reactphp/stream#duplexstreaminterface).
+[`ReadableStreamInterface`](https://github.com/reactphp/stream#readablestreaminterface) and 
+[`WritableStreamInterface`](https://github.com/reactphp/stream#writablestreaminterface).
 
 ### Command
 

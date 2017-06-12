@@ -5,7 +5,8 @@ namespace React\ChildProcess;
 use Evenement\EventEmitter;
 use React\EventLoop\LoopInterface;
 use React\EventLoop\Timer\TimerInterface;
-use React\Stream\Stream;
+use React\Stream\ReadableResourceStream;
+use React\Stream\WritableResourceStream;
 
 /**
  * Process component.
@@ -120,11 +121,10 @@ class Process extends EventEmitter
             });
         };
 
-        $this->stdin  = new Stream($this->pipes[0], $loop);
-        $this->stdin->pause();
-        $this->stdout = new Stream($this->pipes[1], $loop);
+        $this->stdin  = new WritableResourceStream($this->pipes[0], $loop);
+        $this->stdout = new ReadableResourceStream($this->pipes[1], $loop);
         $this->stdout->on('close', $streamCloseHandler);
-        $this->stderr = new Stream($this->pipes[2], $loop);
+        $this->stderr = new ReadableResourceStream($this->pipes[2], $loop);
         $this->stderr->on('close', $streamCloseHandler);
 
         // legacy PHP < 5.4 SEGFAULTs for unbuffered, non-blocking reads
