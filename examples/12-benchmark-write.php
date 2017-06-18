@@ -8,8 +8,7 @@ require __DIR__ . '/../vendor/autoload.php';
 
 $loop = Factory::create();
 
-$info = new React\Stream\Stream(STDERR, $loop);
-$info->pause();
+$info = new React\Stream\WritableResourceStream(STDERR, $loop);
 $info->write('Pipes data to process STDIN' . PHP_EOL);
 if (extension_loaded('xdebug')) {
     $info->write('NOTICE: The "xdebug" extension is loaded, this has a major impact on performance.' . PHP_EOL);
