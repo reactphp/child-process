@@ -20,6 +20,7 @@ as [Streams](https://github.com/reactphp/stream).
   * [Stream Properties](#stream-properties)
   * [Command](#command)
   * [Sigchild Compatibility](#sigchild-compatibility)
+  * [Windows Compatibility](#windows-compatibility)
 * [Install](#install)
 * [Tests](#tests)
 * [License](#license)
