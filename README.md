@@ -219,6 +219,14 @@ of the actual exit code.
 **Note:** This functionality was taken from Symfony's
 [Process](https://github.com/symfony/process) compoment.
 
+### Windows Compatibility
+
+Due to the blocking nature of `STDIN`/`STDOUT`/`STDERR` pipes on windows we cannot 
+guarantee this package works as expected on directly windows. However this package 
+does work on [`Windows Subsystem for Linux`](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux) 
+(or WSL) without issues. We suggest [installing WSL](https://msdn.microsoft.com/en-us/commandline/wsl/install_guide) 
+when you want to run this package on windows.
+
 ## Install
 
 The recommended way to install this library is [through Composer](http://getcomposer.org).
