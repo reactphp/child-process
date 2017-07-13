@@ -20,6 +20,7 @@ as [Streams](https://github.com/reactphp/stream).
   * [Stream Properties](#stream-properties)
   * [Command](#command)
   * [Sigchild Compatibility](#sigchild-compatibility)
+  * [Windows Compatibility](#windows-compatibility)
 * [Install](#install)
 * [Tests](#tests)
 * [License](#license)
@@ -218,6 +219,14 @@ of the actual exit code.
 
 **Note:** This functionality was taken from Symfony's
 [Process](https://github.com/symfony/process) compoment.
+
+### Windows Compatibility
+
+Due to the blocking nature of `STDIN`/`STDOUT`/`STDERR` pipes on Windows we we can 
+not guarantee this package works as expected on Windows directly. However this package 
+does work on [`Windows Subsystem for Linux`](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux) 
+(or WSL) without issues. We suggest [installing WSL](https://msdn.microsoft.com/en-us/commandline/wsl/install_guide) 
+when you want to run this package on Windows.
 
 ## Install
 
