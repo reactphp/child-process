@@ -15,10 +15,10 @@ as [Streams](https://github.com/reactphp/stream).
 
 * [Quickstart example](#quickstart-example)
 * [Processes](#processes)
-  * [EventEmitter Events](#eventemitter-events)
   * [Methods](#methods)
   * [Stream Properties](#stream-properties)
   * [Command](#command)
+  * [Termination](#termination)
   * [Sigchild Compatibility](#sigchild-compatibility)
   * [Windows Compatibility](#windows-compatibility)
 * [Install](#install)
@@ -47,11 +47,6 @@ $loop->run();
 See also the [examples](examples).
 
 ## Processes
-
-### EventEmitter Events
-
-* `exit`: Emitted whenever the process is no longer running. Event listeners
-  will receive the exit code and termination signal as two arguments.
 
 ### Methods
 
@@ -204,6 +199,103 @@ If you pass a complete command line (or are unsure), you SHOULD most likely keep
 the wrapping shell.
 If you want to pass an invidual command only, you MAY want to consider
 prepending the command string with `exec` to avoid the wrapping shell.
+
+### Termination
+
+The `exit` event will be emitted whenever the process is no longer running.
+Event listeners will receive the exit code and termination signal as two
+arguments:
+
+```php
+$process = new Process('sleep 10');
+$process->start($loop);
+
+$process->on('exit', function ($code, $term) {
+    if ($term === null) {
+        echo 'exit with code ' . $code . PHP_EOL;
+    } else {
+        echo 'terminated with signal ' . $term . PHP_EOL;
+    }
+});
+```
+
+Note that `$code` is `null` if the process has terminated, but the exit
+code could not be determined (for example
+[sigchild compatibility](#sigchild-compatibility) was disabled).
+Similarly, `$term` is `null` unless the process has terminated in response to
+an uncaught signal sent to it.
+This is not a limitation of this project, but actual how exit codes and signals
+are exposed on POSIX systems, for more details see also
+[here](https://unix.stackexchange.com/questions/99112/default-exit-code-when-process-is-terminated).
+
+It's also worth noting that process termination depends on all file descriptors
+being closed beforehand.
+This means that all [process pipes](#stream-properties) will emit a `close`
+event before the `exit` event and that no more `data` events will arrive after
+the `exit` event.
+Accordingly, if either of these pipes is in a paused state (`pause()` method
+or internally due to a `pipe()` call), this detection may not trigger.
+
+The `terminate(?int $signal = null): bool` method can be used to send the
+process a signal (SIGTERM by default).
+Depending on which signal you send to the process and whether it has a signal
+handler registered, this can be used to either merely signal a process or even
+forcefully terminate it.
+
+```php
+$process->terminate(SIGUSR1);
+```
+
+Keep the above section in mind if you want to forcefully terminate a process.
+If your process spawn sub-processes or implicitly uses the
+[wrapping shell mentioned above](#command), its file descriptors may be
+inherited to child processes and terminating the main process may not
+necessarily terminate the whole process tree.
+It is highly suggested that you explicitly `close()` all process pipes
+accordingly when terminating a process:
+
+```php
+$process = new Process('sleep 10');
+$process->start($loop);
+
+$loop->addTimer(2.0, function () use ($process) {
+    $process->stdin->close();
+    $process->stout->close();
+    $process->stderr->close();
+    $process->terminate(SIGKILL);
+});
+```
+
+For many simple programs these seamingly complicated steps can also be avoided
+by prefixing the command line with `exec` to avoid the wrapping shell and its
+inherited process pipes as [mentioned above](#command).
+
+```php
+$process = new Process('exec sleep 10');
+$process->start($loop);
+
+$loop->addTimer(2.0, function () use ($process) {
+    $process->terminate();
+});
+```
+
+Many command line programs also wait for data on `STDIN` and terminate cleanly
+when this pipe is closed.
+For example, the following can be used to "soft-close" a `cat` process:
+
+```php
+$process = new Process('cat');
+$process->start($loop);
+
+$loop->addTimer(2.0, function () use ($process) {
+    $process->stdin->end();
+});
+```
+
+While process pipes and termination may seem confusing to newcomers, the above
+properties actually allow some fine grained control over process termination,
+such as first trying a soft-close and then applying a force-close after a
+timeout.
 
 ### Sigchild Compatibility
 
