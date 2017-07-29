@@ -14,8 +14,7 @@ as [Streams](https://github.com/reactphp/stream).
 **Table of contents**
 
 * [Quickstart example](#quickstart-example)
-* [Processes](#processes)
-  * [Methods](#methods)
+* [Process](#process)
   * [Stream Properties](#stream-properties)
   * [Command](#command)
   * [Termination](#termination)
@@ -46,16 +45,7 @@ $loop->run();
 
 See also the [examples](examples).
 
-## Processes
-
-### Methods
-
-* `start()`: Launches the process and registers its IO streams with the event
-  loop. The stdin stream will be left in a paused state.
-* `terminate()`: Send the process a signal (SIGTERM by default).
-
-There are additional public methods on the Process class, which may be used to
-access fields otherwise available through `proc_get_status()`.
+## Process
 
 ### Stream Properties
 
@@ -105,6 +95,7 @@ The `Process` class allows you to pass any kind of command line string:
 
 ```php
 $process = new Process('echo test');
+$process->start($loop);
 ```
 
 By default, PHP will launch processes by wrapping the given command line string
@@ -120,6 +111,7 @@ streams from the wrapping shell command like this:
 
 ```php
 $process = new Process('echo run && demo || echo failed');
+$process->start($loop);
 ```
 
 In other words, the underlying shell is responsible for managing this command
@@ -135,6 +127,7 @@ boundary between each sub-command like this:
 
 ```php
 $process = new Process('cat first && echo --- && cat second');
+$process->start($loop);
 ```
 
 As an alternative, considering launching one process at a time and listening on
@@ -157,6 +150,7 @@ also applies to running the most simple single command:
 
 ```php
 $process = new Process('yes');
+$process->start($loop);
 ```
 
 This will actually spawn a command hierarchy similar to this:
@@ -177,6 +171,7 @@ process to be replaced by our process:
 
 ```php
 $process = new Process('exec yes');
+$process->start($loop);
 ```
 
 This will show a resulting command hierarchy similar to this:
