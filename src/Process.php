@@ -25,6 +25,7 @@ class Process extends EventEmitter
     private $cwd;
     private $env;
     private $enhanceSigchildCompatibility;
+    private $sigchildPipe;
     private $pipes;
 
     private $process;
@@ -90,10 +91,12 @@ class Process extends EventEmitter
             array('pipe', 'w'), // stderr
         );
 
+        $sigchild = null;
         // Read exit code through fourth pipe to work around --enable-sigchild
         if ($this->enhanceSigchildCompatibility) {
             $fdSpec[] = array('pipe', 'w');
-            $cmd = sprintf('(%s) 3>/dev/null; code=$?; echo $code >&3; exit $code', $cmd);
+            $sigchild = 3;
+            $cmd = sprintf('(%s) ' . $sigchild . '>/dev/null; code=$?; echo $code >&' . $sigchild . '; exit $code', $cmd);
         }
 
         $this->process = proc_open($cmd, $fdSpec, $this->pipes, $this->cwd, $this->env);
@@ -128,6 +131,11 @@ class Process extends EventEmitter
                 }
             });
         };
+
+        if ($sigchild !== null) {
+            $this->sigchildPipe = $this->pipes[$sigchild];
+            unset($this->pipes[$sigchild]);
+        }
 
         $this->stdin  = new WritableResourceStream($this->pipes[0], $loop);
         $this->stdout = new ReadableResourceStream($this->pipes[1], $loop);
@@ -337,11 +345,11 @@ class Process extends EventEmitter
      */
     private function pollExitCodePipe()
     {
-        if ( ! isset($this->pipes[3])) {
+        if ($this->sigchildPipe === null) {
             return;
         }
 
-        $r = array($this->pipes[3]);
+        $r = array($this->sigchildPipe);
         $w = $e = null;
 
         $n = @stream_select($r, $w, $e, 0);
@@ -364,12 +372,12 @@ class Process extends EventEmitter
      */
     private function closeExitCodePipe()
     {
-        if ( ! isset($this->pipes[3])) {
+        if ($this->sigchildPipe === null) {
             return;
         }
 
-        fclose($this->pipes[3]);
-        unset($this->pipes[3]);
+        fclose($this->sigchildPipe);
+        $this->sigchildPipe = null;
     }
 
     /**
