@@ -18,9 +18,9 @@ $process->on('exit', function ($exit, $term) {
 
 // forcefully terminate process after 2s
 $loop->addTimer(2.0, function () use ($process) {
-    $process->stdin->close();
-    $process->stdout->close();
-    $process->stderr->close();
+    foreach ($process->pipes as $pipe) {
+        $pipe->close();
+    }
     $process->terminate();
 });
 
