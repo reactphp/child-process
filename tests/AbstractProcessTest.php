@@ -284,6 +284,35 @@ abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
         $process->start($this->createLoop());
     }
 
+    public function testTerminateProcesWithoutStartingReturnsFalse()
+    {
+        $process = new Process('sleep 1');
+
+        $this->assertFalse($process->terminate());
+    }
+
+    public function testTerminateWillExit()
+    {
+        $loop = $this->createloop();
+
+        $process = new Process('sleep 10');
+        $process->start($loop);
+
+        $called = false;
+        $process->on('exit', function () use (&$called) {
+            $called = true;
+        });
+
+        $process->stdin->close();
+        $process->stdout->close();
+        $process->stderr->close();
+        $process->terminate();
+
+        $loop->run();
+
+        $this->assertTrue($called);
+    }
+
     public function testTerminateWithDefaultTermSignalUsingEventLoop()
     {
         if (defined('PHP_WINDOWS_VERSION_BUILD')) {
