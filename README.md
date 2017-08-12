@@ -309,9 +309,10 @@ of the actual exit code.
 
 ### Windows Compatibility
 
-Due to the blocking nature of `STDIN`/`STDOUT`/`STDERR` pipes on Windows we we can 
-not guarantee this package works as expected on Windows directly. However this package 
-does work on [`Windows Subsystem for Linux`](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux) 
+Due to the blocking nature of `STDIN`/`STDOUT`/`STDERR` pipes on Windows we can 
+not guarantee this package works as expected on Windows directly. As such when 
+instantiating `Process` it throws an exception when on native Windows. 
+However this package does work on [`Windows Subsystem for Linux`](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux) 
 (or WSL) without issues. We suggest [installing WSL](https://msdn.microsoft.com/en-us/commandline/wsl/install_guide) 
 when you want to run this package on Windows.
 
