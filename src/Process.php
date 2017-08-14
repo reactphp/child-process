@@ -45,8 +45,7 @@ class Process extends EventEmitter
     * @param string $cwd     Current working directory or null to inherit
     * @param array  $env     Environment variables or null to inherit
     * @param array  $options Options for proc_open()
-    * @throws LogicException On windows
-    * @throws RuntimeException When proc_open() is not installed
+    * @throws LogicException On windows or when proc_open() is not installed
     */
     public function __construct($cmd, $cwd = null, array $env = null, array $options = array())
     {
@@ -55,7 +54,7 @@ class Process extends EventEmitter
         }
 
         if (!function_exists('proc_open')) {
-            throw new \RuntimeException('The Process class relies on proc_open(), which is not available on your PHP installation.');
+            throw new \LogicException('The Process class relies on proc_open(), which is not available on your PHP installation.');
         }
 
         $this->cmd = $cmd;
