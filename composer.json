@@ -10,8 +10,8 @@
         "react/stream": "^1.0 || ^0.7.6"
     },
     "require-dev": {
-        "phpunit/phpunit": "^5.0 || ^4.8.10",
-        "sebastian/environment": "~1.0"
+        "phpunit/phpunit": "^6.4 || ^5.7 || ^4.8.35",
+        "sebastian/environment": "^3.0 || ^2.0 || ^1.0"
     },
     "autoload": {
         "psr-4": { "React\\ChildProcess\\": "src" }

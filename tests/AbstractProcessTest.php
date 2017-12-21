@@ -4,9 +4,10 @@ namespace React\Tests\ChildProcess;
 
 use React\ChildProcess\Process;
 use React\EventLoop\Timer\Timer;
+use PHPUnit\Framework\TestCase;
 use SebastianBergmann\Environment\Runtime;
 
-abstract class AbstractProcessTest extends \PHPUnit_Framework_TestCase
+abstract class AbstractProcessTest extends TestCase
 {
     abstract public function createLoop();
 
