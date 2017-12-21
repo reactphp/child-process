@@ -148,21 +148,28 @@ abstract class AbstractProcessTest extends TestCase
 
     public function testProcessWithDefaultCwdAndEnv()
     {
-        $cmd = $this->getPhpBinary() . ' -r ' . escapeshellarg('echo getcwd(), PHP_EOL, count($_SERVER), PHP_EOL;');
+        $cmd = $this->getPhpCommandLine('echo getcwd(), PHP_EOL, count($_SERVER), PHP_EOL;');
 
         $loop = $this->createLoop();
         $process = new Process($cmd);
 
         $output = '';
+        $error = '';
 
-        $loop->addTimer(0.001, function(Timer $timer) use ($process, &$output) {
+        $loop->addTimer(0.001, function(Timer $timer) use ($process, &$output, &$error) {
             $process->start($timer->getLoop());
-            $process->stdout->on('data', function () use (&$output) {
-                $output .= func_get_arg(0);
+            $process->stdout->on('data', function ($data) use (&$output) {
+                $output .= $data;
+            });
+            $process->stderr->on('data', function ($data) use (&$error) {
+                $error .= $data;
             });
         });
 
         $loop->run();
+
+        $this->assertEmpty($error);
+        $this->assertNotEmpty($output);
 
         list($cwd, $envCount) = explode(PHP_EOL, $output);
 
@@ -176,10 +183,11 @@ abstract class AbstractProcessTest extends TestCase
 
     public function testProcessWithCwd()
     {
-        $cmd = $this->getPhpBinary() . ' -r ' . escapeshellarg('echo getcwd(), PHP_EOL;');
+        $cmd = $this->getPhpCommandLine('echo getcwd(), PHP_EOL;');
+        $cwd = defined('PHP_WINDOWS_VERSION_BUILD') ? 'C:\\' : '/';
 
         $loop = $this->createLoop();
-        $process = new Process($cmd, '/');
+        $process = new Process($cmd, $cwd);
 
         $output = '';
 
@@ -192,7 +200,7 @@ abstract class AbstractProcessTest extends TestCase
 
         $loop->run();
 
-        $this->assertSame('/' . PHP_EOL, $output);
+        $this->assertSame($cwd . PHP_EOL, $output);
     }
 
     public function testProcessWithEnv()
@@ -201,7 +209,13 @@ abstract class AbstractProcessTest extends TestCase
             $this->markTestSkipped('Cannot execute PHP processes with custom environments on Travis CI.');
         }
 
-        $cmd = $this->getPhpBinary() . ' -r ' . escapeshellarg('echo getenv("foo"), PHP_EOL;');
+        $cmd = $this->getPhpCommandLine('echo getenv("foo"), PHP_EOL;');
+
+        if (defined('PHP_WINDOWS_VERSION_BUILD')) {
+            // Windows madness! escapeshellarg seems to completely remove double quotes in Windows!
+            // We need to use simple quotes in our PHP code!
+            $cmd = $this->getPhpCommandLine('echo getenv(\'foo\'), PHP_EOL;');
+        }
 
         $loop = $this->createLoop();
         $process = new Process($cmd, null, array('foo' => 'bar'));
@@ -253,6 +267,10 @@ abstract class AbstractProcessTest extends TestCase
 
     public function testStartInvalidProcess()
     {
+        if (defined('PHP_WINDOWS_VERSION_BUILD')) {
+            $this->markTestSkipped('Windows does not have an executable flag.');
+        }
+
         $cmd = tempnam(sys_get_temp_dir(), 'react');
 
         $loop = $this->createLoop();
@@ -450,6 +468,49 @@ abstract class AbstractProcessTest extends TestCase
     }
 
     /**
+     * @dataProvider provideOutputSizeAndExpectedMaxDuration
+     */
+    public function testProcessWithFixedOutputSize($size, $expectedMaxDuration = 5)
+    {
+        // Note: very strange behaviour of Windows (PHP 5.5.6):
+        // on a 1000 long string, Windows succeeds.
+        // on a 10000 long string, Windows fails to output anything.
+        // On a 100000 long string, it takes a lot of time but succeeds.
+        $cmd = $this->getPhpCommandLine(sprintf('echo str_repeat("o", %d), PHP_EOL;', $size));
+
+        $loop = $this->createLoop();
+        $process = new Process($cmd);
+
+        $output = '';
+
+        $loop->addTimer(0.001, function(Timer $timer) use ($process, &$output) {
+            $process->start($timer->getLoop());
+            $process->stdout->on('data', function () use (&$output) {
+                $output .= func_get_arg(0);
+            });
+        });
+
+        $startTime = microtime(true);
+        $loop->run();
+        $endTime = microtime(true);
+
+        $expectedOutput = str_repeat('o', $size) . PHP_EOL;
+
+        $this->assertEquals(strlen($expectedOutput), strlen($output));
+        $this->assertSame($expectedOutput, $output);
+        $this->assertLessThanOrEqual($expectedMaxDuration, $endTime - $startTime, "Process took longer than expected.");
+    }
+
+    public function provideOutputSizeAndExpectedMaxDuration()
+    {
+        return [
+            [1000, 5],
+            [10000, 5],
+            [100000, 5],
+        ];
+    }
+
+    /**
      * Execute a callback at regular intervals until it returns successfully or
      * a timeout is reached.
      *
@@ -483,5 +544,20 @@ abstract class AbstractProcessTest extends TestCase
         $runtime = new Runtime();
 
         return $runtime->getBinary();
+    }
+
+    private function getPhpCommandLine($phpCode)
+    {
+        /* The following is a suitable workaround for Windows given some
+         * escapeshellarg() incompatibilies in older PHP versions and knowledge
+         * that we're only escaping echo statements destined for "php -r".
+         *
+         * See: http://php.net/manual/en/function.escapeshellarg.php#114873
+         */
+        $phpCode = defined('PHP_WINDOWS_VERSION_BUILD')
+            ? '"' . addcslashes($phpCode, '\\"') . '"'
+            : escapeshellarg($phpCode);
+
+        return $this->getPhpBinary() . ' -r ' . $phpCode;
     }
 }
