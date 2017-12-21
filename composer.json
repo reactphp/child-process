@@ -15,5 +15,8 @@
     },
     "autoload": {
         "psr-4": { "React\\ChildProcess\\": "src" }
+    },
+    "autoload-dev": {
+        "psr-4": { "React\\Tests\\ChildProcess\\": "tests" }
     }
 }
