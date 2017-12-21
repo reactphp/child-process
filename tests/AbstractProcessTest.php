@@ -4,6 +4,7 @@ namespace React\Tests\ChildProcess;
 
 use React\ChildProcess\Process;
 use React\EventLoop\Timer\Timer;
+use PHPUnit\Framework\ExpectationFailedException;
 use PHPUnit\Framework\TestCase;
 use SebastianBergmann\Environment\Runtime;
 
@@ -468,7 +469,11 @@ abstract class AbstractProcessTest extends TestCase
             try {
                 call_user_func($callback);
                 return;
-            } catch (\PHPUnit_Framework_ExpectationFailedException $e) {}
+            } catch (ExpectationFailedException $e) {
+                // namespaced PHPUnit exception
+            } catch (\PHPUnit_Framework_ExpectationFailedException $e) {
+                // legacy PHPUnit exception
+            }
 
             if ((microtime(true) - $start) > $timeout) {
                 throw $e;
