@@ -151,15 +151,13 @@ abstract class AbstractProcessTest extends TestCase
         $cmd = $this->getPhpBinary() . ' -r ' . escapeshellarg('echo getcwd(), PHP_EOL, count($_SERVER), PHP_EOL;');
 
         $loop = $this->createLoop();
+
         $process = new Process($cmd);
+        $process->start($loop);
 
         $output = '';
-
-        $loop->addTimer(0.001, function () use ($process, $loop, &$output) {
-            $process->start($loop);
-            $process->stdout->on('data', function () use (&$output) {
-                $output .= func_get_arg(0);
-            });
+        $process->stdout->on('data', function () use (&$output) {
+            $output .= func_get_arg(0);
         });
 
         $loop->run();
@@ -179,15 +177,13 @@ abstract class AbstractProcessTest extends TestCase
         $cmd = $this->getPhpBinary() . ' -r ' . escapeshellarg('echo getcwd(), PHP_EOL;');
 
         $loop = $this->createLoop();
+
         $process = new Process($cmd, '/');
+        $process->start($loop);
 
         $output = '';
-
-        $loop->addTimer(0.001, function () use ($process, $loop, &$output) {
-            $process->start($loop);
-            $process->stdout->on('data', function () use (&$output) {
-                $output .= func_get_arg(0);
-            });
+        $process->stdout->on('data', function () use (&$output) {
+            $output .= func_get_arg(0);
         });
 
         $loop->run();
@@ -204,15 +200,13 @@ abstract class AbstractProcessTest extends TestCase
         $cmd = $this->getPhpBinary() . ' -r ' . escapeshellarg('echo getenv("foo"), PHP_EOL;');
 
         $loop = $this->createLoop();
+
         $process = new Process($cmd, null, array('foo' => 'bar'));
+        $process->start($loop);
 
         $output = '';
-
-        $loop->addTimer(0.001, function () use ($process, $loop, &$output) {
-            $process->start($loop);
-            $process->stdout->on('data', function () use (&$output) {
-                $output .= func_get_arg(0);
-            });
+        $process->stdout->on('data', function () use (&$output) {
+            $output .= func_get_arg(0);
         });
 
         $loop->run();
@@ -235,9 +229,7 @@ abstract class AbstractProcessTest extends TestCase
             $termSignal = func_get_arg(1);
         });
 
-        $loop->addTimer(0.001, function () use ($process, $loop) {
-            $process->start($loop);
-        });
+        $process->start($loop);
 
         $loop->run();
 
@@ -256,15 +248,13 @@ abstract class AbstractProcessTest extends TestCase
         $cmd = tempnam(sys_get_temp_dir(), 'react');
 
         $loop = $this->createLoop();
+
         $process = new Process($cmd);
+        $process->start($loop);
 
         $output = '';
-
-        $loop->addTimer(0.001, function () use ($process, $loop, &$output) {
-            $process->start($loop);
-            $process->stderr->on('data', function () use (&$output) {
-                $output .= func_get_arg(0);
-            });
+        $process->stderr->on('data', function () use (&$output) {
+            $output .= func_get_arg(0);
         });
 
         $loop->run();
@@ -337,10 +327,8 @@ abstract class AbstractProcessTest extends TestCase
             $termSignal = func_get_arg(1);
         });
 
-        $loop->addTimer(0.001, function () use ($process, $loop) {
-            $process->start($loop);
-            $process->terminate();
-        });
+        $process->start($loop);
+        $process->terminate();
 
         $loop->run();
 
@@ -378,22 +366,20 @@ abstract class AbstractProcessTest extends TestCase
         });
 
         $that = $this;
-        $loop->addTimer(0.001, function () use ($process, $loop, $that) {
-            $process->start($loop);
-            $process->terminate(SIGSTOP);
+        $process->start($loop);
+        $process->terminate(SIGSTOP);
 
-            $that->assertSoon(function () use ($process, $that) {
-                $that->assertTrue($process->isStopped());
-                $that->assertTrue($process->isRunning());
-                $that->assertEquals(SIGSTOP, $process->getStopSignal());
-            });
+        $that->assertSoon(function () use ($process, $that) {
+            $that->assertTrue($process->isStopped());
+            $that->assertTrue($process->isRunning());
+            $that->assertEquals(SIGSTOP, $process->getStopSignal());
+        });
 
-            $process->terminate(SIGCONT);
+        $process->terminate(SIGCONT);
 
-            $that->assertSoon(function () use ($process, $that) {
-                $that->assertFalse($process->isStopped());
-                $that->assertEquals(SIGSTOP, $process->getStopSignal());
-            });
+        $that->assertSoon(function () use ($process, $that) {
+            $that->assertFalse($process->isStopped());
+            $that->assertEquals(SIGSTOP, $process->getStopSignal());
         });
 
         $loop->run();
