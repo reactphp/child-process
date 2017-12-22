@@ -1,7 +1,7 @@
 {
     "name": "react/child-process",
-    "description": "Library for executing child processes.",
-    "keywords": ["process"],
+    "description": "Event-driven library for executing child processes with ReactPHP.",
+    "keywords": ["process", "event-driven", "ReactPHP"],
     "license": "MIT",
     "require": {
         "php": ">=5.3.0",

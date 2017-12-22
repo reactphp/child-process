@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.5.1 (2017-12-22)
+
+*   Fix: Update Stream dependency to work around SEGFAULT in legacy PHP < 5.4.28
+    and PHP < 5.5.12
+    (#50 and #52 by @clue)
+
+*   Improve test suite by simplifying test bootstrapping logic via Composer and
+    adding forward compatibility with PHPUnit 6
+    (#53, #54 and #55 by @clue)
+
 ## 0.5.0 (2017-08-15)
 
 * Forward compatibility: react/event-loop 1.0 and 0.5, react/stream 0.7.2 and 1.0, and Événement 3.0
