@@ -2,10 +2,9 @@
 
 namespace React\Tests\ChildProcess;
 
-use React\ChildProcess\Process;
-use React\EventLoop\Timer\Timer;
 use PHPUnit\Framework\ExpectationFailedException;
 use PHPUnit\Framework\TestCase;
+use React\ChildProcess\Process;
 use SebastianBergmann\Environment\Runtime;
 
 abstract class AbstractProcessTest extends TestCase
@@ -156,8 +155,8 @@ abstract class AbstractProcessTest extends TestCase
 
         $output = '';
 
-        $loop->addTimer(0.001, function(Timer $timer) use ($process, &$output) {
-            $process->start($timer->getLoop());
+        $loop->addTimer(0.001, function () use ($process, $loop, &$output) {
+            $process->start($loop);
             $process->stdout->on('data', function () use (&$output) {
                 $output .= func_get_arg(0);
             });
@@ -184,8 +183,8 @@ abstract class AbstractProcessTest extends TestCase
 
         $output = '';
 
-        $loop->addTimer(0.001, function(Timer $timer) use ($process, &$output) {
-            $process->start($timer->getLoop());
+        $loop->addTimer(0.001, function () use ($process, $loop, &$output) {
+            $process->start($loop);
             $process->stdout->on('data', function () use (&$output) {
                 $output .= func_get_arg(0);
             });
@@ -209,8 +208,8 @@ abstract class AbstractProcessTest extends TestCase
 
         $output = '';
 
-        $loop->addTimer(0.001, function(Timer $timer) use ($process, &$output) {
-            $process->start($timer->getLoop());
+        $loop->addTimer(0.001, function () use ($process, $loop, &$output) {
+            $process->start($loop);
             $process->stdout->on('data', function () use (&$output) {
                 $output .= func_get_arg(0);
             });
@@ -236,8 +235,8 @@ abstract class AbstractProcessTest extends TestCase
             $termSignal = func_get_arg(1);
         });
 
-        $loop->addTimer(0.001, function(Timer $timer) use ($process) {
-            $process->start($timer->getLoop());
+        $loop->addTimer(0.001, function () use ($process, $loop) {
+            $process->start($loop);
         });
 
         $loop->run();
@@ -261,8 +260,8 @@ abstract class AbstractProcessTest extends TestCase
 
         $output = '';
 
-        $loop->addTimer(0.001, function(Timer $timer) use ($process, &$output) {
-            $process->start($timer->getLoop());
+        $loop->addTimer(0.001, function () use ($process, $loop, &$output) {
+            $process->start($loop);
             $process->stderr->on('data', function () use (&$output) {
                 $output .= func_get_arg(0);
             });
@@ -338,8 +337,8 @@ abstract class AbstractProcessTest extends TestCase
             $termSignal = func_get_arg(1);
         });
 
-        $loop->addTimer(0.001, function(Timer $timer) use ($process) {
-            $process->start($timer->getLoop());
+        $loop->addTimer(0.001, function () use ($process, $loop) {
+            $process->start($loop);
             $process->terminate();
         });
 
@@ -379,11 +378,11 @@ abstract class AbstractProcessTest extends TestCase
         });
 
         $that = $this;
-        $loop->addTimer(0.001, function(Timer $timer) use ($process, $that) {
-            $process->start($timer->getLoop());
+        $loop->addTimer(0.001, function () use ($process, $loop, $that) {
+            $process->start($loop);
             $process->terminate(SIGSTOP);
 
-            $that->assertSoon(function() use ($process, $that) {
+            $that->assertSoon(function () use ($process, $that) {
                 $that->assertTrue($process->isStopped());
                 $that->assertTrue($process->isRunning());
                 $that->assertEquals(SIGSTOP, $process->getStopSignal());
@@ -391,7 +390,7 @@ abstract class AbstractProcessTest extends TestCase
 
             $process->terminate(SIGCONT);
 
-            $that->assertSoon(function() use ($process, $that) {
+            $that->assertSoon(function () use ($process, $that) {
                 $that->assertFalse($process->isStopped());
                 $that->assertEquals(SIGSTOP, $process->getStopSignal());
             });
@@ -444,7 +443,12 @@ abstract class AbstractProcessTest extends TestCase
             }
         );
 
-        $loop->tick();
+        // tick loop once
+        $loop->addTimer(0, function () use ($loop) {
+            $loop->stop();
+        });
+        $loop->run();
+
         sleep(1); // comment this line out and it works fine
 
         $loop->run();
