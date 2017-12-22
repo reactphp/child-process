@@ -2,10 +2,9 @@
 
 namespace React\Tests\ChildProcess;
 
-use React\ChildProcess\Process;
-use React\EventLoop\Timer\Timer;
 use PHPUnit\Framework\ExpectationFailedException;
 use PHPUnit\Framework\TestCase;
+use React\ChildProcess\Process;
 use SebastianBergmann\Environment\Runtime;
 
 abstract class AbstractProcessTest extends TestCase
@@ -152,15 +151,13 @@ abstract class AbstractProcessTest extends TestCase
         $cmd = $this->getPhpBinary() . ' -r ' . escapeshellarg('echo getcwd(), PHP_EOL, count($_SERVER), PHP_EOL;');
 
         $loop = $this->createLoop();
+
         $process = new Process($cmd);
+        $process->start($loop);
 
         $output = '';
-
-        $loop->addTimer(0.001, function(Timer $timer) use ($process, &$output) {
-            $process->start($timer->getLoop());
-            $process->stdout->on('data', function () use (&$output) {
-                $output .= func_get_arg(0);
-            });
+        $process->stdout->on('data', function () use (&$output) {
+            $output .= func_get_arg(0);
         });
 
         $loop->run();
@@ -180,15 +177,13 @@ abstract class AbstractProcessTest extends TestCase
         $cmd = $this->getPhpBinary() . ' -r ' . escapeshellarg('echo getcwd(), PHP_EOL;');
 
         $loop = $this->createLoop();
+
         $process = new Process($cmd, '/');
+        $process->start($loop);
 
         $output = '';
-
-        $loop->addTimer(0.001, function(Timer $timer) use ($process, &$output) {
-            $process->start($timer->getLoop());
-            $process->stdout->on('data', function () use (&$output) {
-                $output .= func_get_arg(0);
-            });
+        $process->stdout->on('data', function () use (&$output) {
+            $output .= func_get_arg(0);
         });
 
         $loop->run();
@@ -205,15 +200,13 @@ abstract class AbstractProcessTest extends TestCase
         $cmd = $this->getPhpBinary() . ' -r ' . escapeshellarg('echo getenv("foo"), PHP_EOL;');
 
         $loop = $this->createLoop();
+
         $process = new Process($cmd, null, array('foo' => 'bar'));
+        $process->start($loop);
 
         $output = '';
-
-        $loop->addTimer(0.001, function(Timer $timer) use ($process, &$output) {
-            $process->start($timer->getLoop());
-            $process->stdout->on('data', function () use (&$output) {
-                $output .= func_get_arg(0);
-            });
+        $process->stdout->on('data', function () use (&$output) {
+            $output .= func_get_arg(0);
         });
 
         $loop->run();
@@ -236,9 +229,7 @@ abstract class AbstractProcessTest extends TestCase
             $termSignal = func_get_arg(1);
         });
 
-        $loop->addTimer(0.001, function(Timer $timer) use ($process) {
-            $process->start($timer->getLoop());
-        });
+        $process->start($loop);
 
         $loop->run();
 
@@ -257,15 +248,13 @@ abstract class AbstractProcessTest extends TestCase
         $cmd = tempnam(sys_get_temp_dir(), 'react');
 
         $loop = $this->createLoop();
+
         $process = new Process($cmd);
+        $process->start($loop);
 
         $output = '';
-
-        $loop->addTimer(0.001, function(Timer $timer) use ($process, &$output) {
-            $process->start($timer->getLoop());
-            $process->stderr->on('data', function () use (&$output) {
-                $output .= func_get_arg(0);
-            });
+        $process->stderr->on('data', function () use (&$output) {
+            $output .= func_get_arg(0);
         });
 
         $loop->run();
@@ -338,10 +327,8 @@ abstract class AbstractProcessTest extends TestCase
             $termSignal = func_get_arg(1);
         });
 
-        $loop->addTimer(0.001, function(Timer $timer) use ($process) {
-            $process->start($timer->getLoop());
-            $process->terminate();
-        });
+        $process->start($loop);
+        $process->terminate();
 
         $loop->run();
 
@@ -379,22 +366,20 @@ abstract class AbstractProcessTest extends TestCase
         });
 
         $that = $this;
-        $loop->addTimer(0.001, function(Timer $timer) use ($process, $that) {
-            $process->start($timer->getLoop());
-            $process->terminate(SIGSTOP);
+        $process->start($loop);
+        $process->terminate(SIGSTOP);
 
-            $that->assertSoon(function() use ($process, $that) {
-                $that->assertTrue($process->isStopped());
-                $that->assertTrue($process->isRunning());
-                $that->assertEquals(SIGSTOP, $process->getStopSignal());
-            });
+        $that->assertSoon(function () use ($process, $that) {
+            $that->assertTrue($process->isStopped());
+            $that->assertTrue($process->isRunning());
+            $that->assertEquals(SIGSTOP, $process->getStopSignal());
+        });
 
-            $process->terminate(SIGCONT);
+        $process->terminate(SIGCONT);
 
-            $that->assertSoon(function() use ($process, $that) {
-                $that->assertFalse($process->isStopped());
-                $that->assertEquals(SIGSTOP, $process->getStopSignal());
-            });
+        $that->assertSoon(function () use ($process, $that) {
+            $that->assertFalse($process->isStopped());
+            $that->assertEquals(SIGSTOP, $process->getStopSignal());
         });
 
         $loop->run();
@@ -444,7 +429,12 @@ abstract class AbstractProcessTest extends TestCase
             }
         );
 
-        $loop->tick();
+        // tick loop once
+        $loop->addTimer(0, function () use ($loop) {
+            $loop->stop();
+        });
+        $loop->run();
+
         sleep(1); // comment this line out and it works fine
 
         $loop->run();
