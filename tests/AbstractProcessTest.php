@@ -243,6 +243,41 @@ abstract class AbstractProcessTest extends TestCase
         $this->assertFalse($process->isTerminated());
     }
 
+    public function testProcessWillExitFasterThanExitInterval()
+    {
+        $loop = $this->createLoop();
+        $process = new Process('echo hi');
+        $process->start($loop, 2);
+
+        $time = microtime(true);
+        $loop->run();
+        $time = microtime(true) - $time;
+
+        $this->assertLessThan(0.1, $time);
+    }
+
+    public function testDetectsClosingStdoutWithoutHavingToWaitForExit()
+    {
+        $cmd = 'exec ' . $this->getPhpBinary() . ' -r ' . escapeshellarg('fclose(STDOUT); sleep(1);');
+
+        $loop = $this->createLoop();
+        $process = new Process($cmd);
+        $process->start($loop);
+
+        $closed = false;
+        $process->stdout->on('close', function () use (&$closed) {
+            $closed = true;
+        });
+
+        // run loop for 0.1s only
+        $loop->addTimer(0.1, function () use ($loop) {
+            $loop->stop();
+        });
+        $loop->run();
+
+        $this->assertTrue($closed);
+    }
+
     public function testStartInvalidProcess()
     {
         $cmd = tempnam(sys_get_temp_dir(), 'react');
