@@ -278,6 +278,47 @@ abstract class AbstractProcessTest extends TestCase
         $this->assertTrue($closed);
     }
 
+    public function testKeepsRunningEvenWhenAllStdioPipesHaveBeenClosed()
+    {
+        $cmd = 'exec ' . $this->getPhpBinary() . ' -r ' . escapeshellarg('fclose(STDIN);fclose(STDOUT);fclose(STDERR);sleep(1);');
+
+        $loop = $this->createLoop();
+        $process = new Process($cmd);
+        $process->start($loop);
+
+        $closed = 0;
+        $process->stdout->on('close', function () use (&$closed) {
+            ++$closed;
+        });
+        $process->stderr->on('close', function () use (&$closed) {
+            ++$closed;
+        });
+
+        // run loop for 0.1s only
+        $loop->addTimer(0.1, function () use ($loop) {
+            $loop->stop();
+        });
+        $loop->run();
+
+        $this->assertEquals(2, $closed);
+        $this->assertTrue($process->isRunning());
+    }
+
+    public function testDetectsClosingProcessEvenWhenAllStdioPipesHaveBeenClosed()
+    {
+        $cmd = 'exec ' . $this->getPhpBinary() . ' -r ' . escapeshellarg('fclose(STDIN);fclose(STDOUT);fclose(STDERR);usleep(10000);');
+
+        $loop = $this->createLoop();
+        $process = new Process($cmd);
+        $process->start($loop, 0.001);
+
+        $time = microtime(true);
+        $loop->run();
+        $time = microtime(true) - $time;
+
+        $this->assertLessThan(0.1, $time);
+    }
+
     public function testStartInvalidProcess()
     {
         $cmd = tempnam(sys_get_temp_dir(), 'react');
