@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.5.2 (2018-01-18)
+
+*   Feature: Detect "exit" immediately if last process pipe is closed
+    (#58 by @clue)
+
+    This introduces a simple check to see if the program is already known to be
+    closed when the last process pipe is closed instead of relying on a periodic
+    timer. This simple change improves "exit" detection significantly for most
+    programs and does not cause a noticeable penalty for more advanced use cases.
+
+*   Fix forward compatibility with upcoming EventLoop releases
+    (#56 by @clue)
+
 ## 0.5.1 (2017-12-22)
 
 *   Fix: Update Stream dependency to work around SEGFAULT in legacy PHP < 5.4.28
