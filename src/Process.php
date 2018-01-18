@@ -115,10 +115,18 @@ class Process extends EventEmitter
                 return;
             }
 
+            // process already closed => report immediately
+            if (!$that->isRunning()) {
+                $that->close();
+                $that->emit('exit', array($that->getExitCode(), $that->getTermSignal()));
+                return;
+            }
+
+            // close not detected immediately => check regularly
             $loop->addPeriodicTimer($interval, function ($timer) use ($that, $loop) {
                 if (!$that->isRunning()) {
-                    $that->close();
                     $loop->cancelTimer($timer);
+                    $that->close();
                     $that->emit('exit', array($that->getExitCode(), $that->getTermSignal()));
                 }
             });
