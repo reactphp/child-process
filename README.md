@@ -256,7 +256,7 @@ $process->start($loop);
 
 $loop->addTimer(2.0, function () use ($process) {
     $process->stdin->close();
-    $process->stout->close();
+    $process->stdout->close();
     $process->stderr->close();
     $process->terminate(SIGKILL);
 });
