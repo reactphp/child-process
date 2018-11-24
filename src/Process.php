@@ -24,7 +24,6 @@ class Process extends EventEmitter
     private $cmd;
     private $cwd;
     private $env;
-    private $options;
     private $enhanceSigchildCompatibility;
     private $pipes;
 
@@ -40,13 +39,12 @@ class Process extends EventEmitter
     /**
     * Constructor.
     *
-    * @param string $cmd     Command line to run
-    * @param string $cwd     Current working directory or null to inherit
-    * @param array  $env     Environment variables or null to inherit
-    * @param array  $options Options for proc_open()
-    * @throws LogicException On windows or when proc_open() is not installed
+    * @param string $cmd      Command line to run
+    * @param null|string $cwd Current working directory or null to inherit
+    * @param null|array  $env Environment variables or null to inherit
+    * @throws \LogicException On windows or when proc_open() is not installed
     */
-    public function __construct($cmd, $cwd = null, array $env = null, array $options = array())
+    public function __construct($cmd, $cwd = null, array $env = null)
     {
         if (substr(strtolower(PHP_OS), 0, 3) === 'win') {
             throw new \LogicException('Windows isn\'t supported due to the blocking nature of STDIN/STDOUT/STDERR pipes.');
@@ -66,7 +64,6 @@ class Process extends EventEmitter
             }
         }
 
-        $this->options = $options;
         $this->enhanceSigchildCompatibility = $this->isSigchildEnabled();
     }
 
@@ -99,7 +96,7 @@ class Process extends EventEmitter
             $cmd = sprintf('(%s) 3>/dev/null; code=$?; echo $code >&3; exit $code', $cmd);
         }
 
-        $this->process = proc_open($cmd, $fdSpec, $this->pipes, $this->cwd, $this->env, $this->options);
+        $this->process = proc_open($cmd, $fdSpec, $this->pipes, $this->cwd, $this->env);
 
         if (!is_resource($this->process)) {
             throw new \RuntimeException('Unable to launch a new process.');
