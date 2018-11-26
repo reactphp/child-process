@@ -11,28 +11,6 @@ abstract class AbstractProcessTest extends TestCase
 {
     abstract public function createLoop();
 
-    public function testGetEnhanceSigchildCompatibility()
-    {
-        $process = new Process('echo foo');
-
-        $this->assertSame($process, $process->setEnhanceSigchildCompatibility(true));
-        $this->assertTrue($process->getEnhanceSigchildCompatibility());
-
-        $this->assertSame($process, $process->setEnhanceSigchildCompatibility(false));
-        $this->assertFalse($process->getEnhanceSigchildCompatibility());
-    }
-
-    /**
-     * @expectedException RuntimeException
-     */
-    public function testSetEnhanceSigchildCompatibilityCannotBeCalledIfProcessIsRunning()
-    {
-        $process = new Process('sleep 1');
-
-        $process->start($this->createLoop());
-        $process->setEnhanceSigchildCompatibility(false);
-    }
-
     public function testGetCommand()
     {
         $process = new Process('echo foo');
@@ -65,6 +43,20 @@ abstract class AbstractProcessTest extends TestCase
     public function testGetTermSignalWhenRunning($process)
     {
         $this->assertNull($process->getTermSignal());
+    }
+
+    public function testCommandWithEnhancedSigchildCompatibilityReceivesExitCode()
+    {
+        $loop = $this->createLoop();
+        $old = Process::isSigchildEnabled();
+        Process::setSigchildEnabled(true);
+        $process = new Process('echo foo');
+        $process->start($loop);
+        Process::setSigchildEnabled($old);
+
+        $loop->run();
+
+        $this->assertEquals(0, $process->getExitCode());
     }
 
     public function testReceivesProcessStdoutFromEcho()

@@ -64,7 +64,7 @@ class Process extends EventEmitter
             }
         }
 
-        $this->enhanceSigchildCompatibility = $this->isSigchildEnabled();
+        $this->enhanceSigchildCompatibility = self::isSigchildEnabled();
     }
 
     /**
@@ -91,7 +91,7 @@ class Process extends EventEmitter
         );
 
         // Read exit code through fourth pipe to work around --enable-sigchild
-        if ($this->isSigchildEnabled() && $this->enhanceSigchildCompatibility) {
+        if ($this->enhanceSigchildCompatibility) {
             $fdSpec[] = array('pipe', 'w');
             $cmd = sprintf('(%s) 3>/dev/null; code=$?; echo $code >&3; exit $code', $cmd);
         }
@@ -152,7 +152,7 @@ class Process extends EventEmitter
         $this->stdout->close();
         $this->stderr->close();
 
-        if ($this->isSigchildEnabled() && $this->enhanceSigchildCompatibility) {
+        if ($this->enhanceSigchildCompatibility) {
             $this->pollExitCodePipe();
             $this->closeExitCodePipe();
         }
@@ -201,38 +201,6 @@ class Process extends EventEmitter
     public function getCommand()
     {
         return $this->cmd;
-    }
-
-    /**
-     * Return whether sigchild compatibility is enabled.
-     *
-     * @return boolean
-     */
-    public final function getEnhanceSigchildCompatibility()
-    {
-        return $this->enhanceSigchildCompatibility;
-    }
-
-    /**
-     * Enable or disable sigchild compatibility mode.
-     *
-     * Sigchild compatibility mode is required to get the exit code and
-     * determine the success of a process when PHP has been compiled with
-     * the --enable-sigchild option.
-     *
-     * @param boolean $enhance
-     * @return self
-     * @throws RuntimeException If the process is already running
-     */
-    public final function setEnhanceSigchildCompatibility($enhance)
-    {
-        if ($this->isRunning()) {
-            throw new \RuntimeException('Process is already running');
-        }
-
-        $this->enhanceSigchildCompatibility = (bool) $enhance;
-
-        return $this;
     }
 
     /**
@@ -345,6 +313,21 @@ class Process extends EventEmitter
         phpinfo(INFO_GENERAL);
 
         return self::$sigchild = false !== strpos(ob_get_clean(), '--enable-sigchild');
+    }
+
+    /**
+     * Enable or disable sigchild compatibility mode.
+     *
+     * Sigchild compatibility mode is required to get the exit code and
+     * determine the success of a process when PHP has been compiled with
+     * the --enable-sigchild option.
+     *
+     * @param boolean $sigchild
+     * @return void
+     */
+    public final static function setSigchildEnabled($sigchild)
+    {
+        self::$sigchild = (bool) $sigchild;
     }
 
     /**
