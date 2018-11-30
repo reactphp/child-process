@@ -295,17 +295,39 @@ timeout.
 
 ### Sigchild Compatibility
 
-When PHP has been compiled with the `--enabled-sigchild` option, a child
-process' exit code cannot be reliably determined via `proc_close()` or
-`proc_get_status()`. Instead, we execute the child process with a fourth pipe
-and use that to retrieve its exit code.
+Internally, this project uses a work-around to improve compatibility when PHP
+has been compiled with the `--enable-sigchild` option. This should not affect most
+installations as this configure option is not used by default and many
+distributions (such as Debian and Ubuntu) are known to not use this by default.
+Some installations that use [Oracle OCI8](http://php.net/manual/en/book.oci8.php)
+may use this configure option to circumvent `defunct` processes.
 
-This behavior is used by default and only when necessary. It may be manually
-disabled by calling `setEnhanceSigchildCompatibility(false)` on the Process
-before it is started, in which case the `exit` event may receive `null` instead
-of the actual exit code.
+When PHP has been compiled with the `--enable-sigchild` option, a child process'
+exit code cannot be reliably determined via `proc_close()` or `proc_get_status()`.
+To work around this, we execute the child process with an additional pipe and
+use that to retrieve its exit code.
 
-**Note:** This functionality was taken from Symfony's
+This work-around incurs some overhead, so we only trigger this when necessary
+and when we detect that PHP has been compiled with the `--enable-sigchild` option.
+Because PHP does not provide a way to reliably detect this option, we try to
+inspect output of PHP's configure options from the `phpinfo()` function.
+
+The static `setSigchildEnabled(bool $sigchild): void` method can be used to
+explicitly enable or disable this behavior like this:
+
+```php
+// advanced: not recommended by default
+Process::setSigchildEnabled(true);
+```
+
+Note that all processes instantiated after this method call will be affected.
+If this work-around is disabled on an affected PHP installation, the `exit`
+event may receive `null` instead of the actual exit code as described above.
+Similarly, some distributions are known to omit the configure options from
+`phpinfo()`, so automatic detection may fail to enable this work-around in some
+cases. You may then enable this  explicitly as given above.
+
+**Note:** The original functionality was taken from Symfony's
 [Process](https://github.com/symfony/process) compoment.
 
 ### Windows Compatibility
