@@ -42,6 +42,33 @@ abstract class AbstractProcessTest extends TestCase
         $this->assertSame($process->stderr, $process->pipes[2]);
     }
 
+    public function testStartWithoutAnyPipesWillNotAssignPipes()
+    {
+        $process = new Process('exit 0', null, null, array());
+        $process->start($this->createLoop());
+
+        $this->assertNull($process->stdin);
+        $this->assertNull($process->stdout);
+        $this->assertNull($process->stderr);
+        $this->assertEquals(array(), $process->pipes);
+    }
+
+    public function testStartWithCustomPipesWillAssignPipes()
+    {
+        $process = new Process('exit 0', null, null, array(
+            0 => array('pipe', 'w'),
+            3 => array('pipe', 'r')
+        ));
+        $process->start($this->createLoop());
+
+        $this->assertInstanceOf('React\Stream\ReadableStreamInterface', $process->stdin);
+        $this->assertNull($process->stdout);
+        $this->assertNull($process->stderr);
+        $this->assertCount(2, $process->pipes);
+        $this->assertSame($process->stdin, $process->pipes[0]);
+        $this->assertInstanceOf('React\Stream\WritableStreamInterface', $process->pipes[3]);
+    }
+
     public function testIsRunning()
     {
         $process = new Process('sleep 1');
@@ -333,6 +360,21 @@ abstract class AbstractProcessTest extends TestCase
         $time = microtime(true) - $time;
 
         $this->assertLessThan(0.1, $time);
+        $this->assertSame(0, $process->getExitCode());
+    }
+
+    public function testDetectsClosingProcessEvenWhenStartedWithoutPipes()
+    {
+        $loop = $this->createLoop();
+        $process = new Process('exit 0', null, null, array());
+        $process->start($loop, 0.001);
+
+        $time = microtime(true);
+        $loop->run();
+        $time = microtime(true) - $time;
+
+        $this->assertLessThan(0.1, $time);
+        $this->assertSame(0, $process->getExitCode());
     }
 
     public function testStartInvalidProcess()

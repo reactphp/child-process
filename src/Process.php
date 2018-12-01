@@ -20,22 +20,25 @@ use React\Stream\WritableStreamInterface;
 class Process extends EventEmitter
 {
     /**
-     * @var ?WritableStreamInterface
+     * @var WritableStreamInterface|null|ReadableStreamInterface
      */
     public $stdin;
 
     /**
-     * @var ?ReadableStreamInterface
+     * @var ReadableStreamInterface|null|WritableStreamInterface
      */
     public $stdout;
 
     /**
-     * @var ?ReadableStreamInterface
+     * @var ReadableStreamInterface|null|WritableStreamInterface
      */
     public $stderr;
 
     /**
      * Array with all process pipes (once started)
+     *
+     * Unless explicitly configured otherwise during construction, the following
+     * standard I/O pipes will be assigned by default:
      * - 0: STDIN (`WritableStreamInterface`)
      * - 1: STDOUT (`ReadableStreamInterface`)
      * - 2: STDERR (`ReadableStreamInterface`)
@@ -47,6 +50,8 @@ class Process extends EventEmitter
     private $cmd;
     private $cwd;
     private $env;
+    private $fds;
+
     private $enhanceSigchildCompatibility;
     private $sigchildPipe;
 
@@ -65,9 +70,10 @@ class Process extends EventEmitter
     * @param string $cmd      Command line to run
     * @param null|string $cwd Current working directory or null to inherit
     * @param null|array  $env Environment variables or null to inherit
+    * @param null|array  $fds File descriptors to allocate for this process (or null = default STDIO streams)
     * @throws \LogicException On windows or when proc_open() is not installed
     */
-    public function __construct($cmd, $cwd = null, array $env = null)
+    public function __construct($cmd, $cwd = null, array $env = null, array $fds = null)
     {
         if (substr(strtolower(PHP_OS), 0, 3) === 'win') {
             throw new \LogicException('Windows isn\'t supported due to the blocking nature of STDIN/STDOUT/STDERR pipes.');
@@ -87,18 +93,27 @@ class Process extends EventEmitter
             }
         }
 
+        if ($fds === null) {
+            $fds = array(
+                array('pipe', 'r'), // stdin
+                array('pipe', 'w'), // stdout
+                array('pipe', 'w'), // stderr
+            );
+        }
+
+        $this->fds = $fds;
         $this->enhanceSigchildCompatibility = self::isSigchildEnabled();
     }
 
     /**
      * Start the process.
      *
-     * After the process is started, the standard IO streams will be constructed
-     * and available via public properties. STDIN will be paused upon creation.
+     * After the process is started, the standard I/O streams will be constructed
+     * and available via public properties.
      *
      * @param LoopInterface $loop        Loop interface for stream construction
      * @param float         $interval    Interval to periodically monitor process state (seconds)
-     * @throws RuntimeException If the process is already running or fails to start
+     * @throws \RuntimeException If the process is already running or fails to start
      */
     public function start(LoopInterface $loop, $interval = 0.1)
     {
@@ -107,17 +122,22 @@ class Process extends EventEmitter
         }
 
         $cmd = $this->cmd;
-        $fdSpec = array(
-            array('pipe', 'r'), // stdin
-            array('pipe', 'w'), // stdout
-            array('pipe', 'w'), // stderr
-        );
-
+        $fdSpec = $this->fds;
         $sigchild = null;
+
         // Read exit code through fourth pipe to work around --enable-sigchild
         if ($this->enhanceSigchildCompatibility) {
             $fdSpec[] = array('pipe', 'w');
-            $sigchild = 3;
+            \end($fdSpec);
+            $sigchild = \key($fdSpec);
+
+            // make sure this is fourth or higher (do not mess with STDIO)
+            if ($sigchild < 3) {
+                $fdSpec[3] = $fdSpec[$sigchild];
+                unset($fdSpec[$sigchild]);
+                $sigchild = 3;
+            }
+
             $cmd = sprintf('(%s) ' . $sigchild . '>/dev/null; code=$?; echo $code >&' . $sigchild . '; exit $code', $cmd);
         }
 
@@ -127,13 +147,13 @@ class Process extends EventEmitter
             throw new \RuntimeException('Unable to launch a new process.');
         }
 
-        $closeCount = 0;
-
+        // count open process pipes and await close event for each to drain buffers before detecting exit
         $that = $this;
+        $closeCount = 0;
         $streamCloseHandler = function () use (&$closeCount, $loop, $interval, $that) {
-            $closeCount++;
+            $closeCount--;
 
-            if ($closeCount < 2) {
+            if ($closeCount > 0) {
                 return;
             }
 
@@ -160,18 +180,25 @@ class Process extends EventEmitter
         }
 
         foreach ($pipes as $n => $fd) {
-            if ($n === 0) {
+            $meta = \stream_get_meta_data($fd);
+            if (\strpos($meta['mode'], 'w') !== false) {
                 $stream = new WritableResourceStream($fd, $loop);
             } else {
                 $stream = new ReadableResourceStream($fd, $loop);
                 $stream->on('close', $streamCloseHandler);
+                $closeCount++;
             }
             $this->pipes[$n] = $stream;
         }
 
-        $this->stdin  = $this->pipes[0];
-        $this->stdout = $this->pipes[1];
-        $this->stderr = $this->pipes[2];
+        $this->stdin  = isset($this->pipes[0]) ? $this->pipes[0] : null;
+        $this->stdout = isset($this->pipes[1]) ? $this->pipes[1] : null;
+        $this->stderr = isset($this->pipes[2]) ? $this->pipes[2] : null;
+
+        // immediately start checking for process exit when started without any I/O pipes
+        if (!$closeCount) {
+            $streamCloseHandler();
+        }
     }
 
     /**
@@ -186,9 +213,9 @@ class Process extends EventEmitter
             return;
         }
 
-        $this->stdin->close();
-        $this->stdout->close();
-        $this->stderr->close();
+        foreach ($this->pipes as $pipe) {
+            $pipe->close();
+        }
 
         if ($this->enhanceSigchildCompatibility) {
             $this->pollExitCodePipe();

@@ -19,6 +19,7 @@ as [Streams](https://github.com/reactphp/stream).
   * [Stream Properties](#stream-properties)
   * [Command](#command)
   * [Termination](#termination)
+  * [Custom pipes](#custom-pipes)
   * [Sigchild Compatibility](#sigchild-compatibility)
   * [Windows Compatibility](#windows-compatibility)
 * [Install](#install)
@@ -55,14 +56,21 @@ Once a process is started, its I/O streams will be constructed as instances of
 Before `start()` is called, these properties are not set. Once a process terminates, 
 the streams will become closed but not unset.
 
+Following common Unix conventions, this library will start each child process
+with the three pipes matching the standard I/O streams as given below by default.
+You can use the named references for common use cases or access these as an
+array with all three pipes.
+
 * `$stdin`  or `$pipes[0]` is a `WritableStreamInterface`
 * `$stdout` or `$pipes[1]` is a `ReadableStreamInterface`
 * `$stderr` or `$pipes[2]` is a `ReadableStreamInterface`
 
-Following common Unix conventions, this library will always start each child
-process with the three pipes matching the standard I/O streams as given above.
-You can use the named references for common use cases or access these as an
-array with all three pipes.
+Note that this default configuration may be overridden by explicitly passing
+[custom pipes](#custom-pipes), in which case they may not be set or be assigned
+different values. The `$pipes` array will always contain references to all pipes
+as configured and the standard I/O references will always be set to reference
+the pipes matching the above conventions. See [custom pipes](#custom-pipes) for
+more details.
 
 Because each of these implement the underlying
 [`ReadableStreamInterface`](https://github.com/reactphp/stream#readablestreaminterface) or 
@@ -70,6 +78,9 @@ Because each of these implement the underlying
 you can use any of their events and methods as usual:
 
 ```php
+$process = new Process($command);
+$process->start($loop);
+
 $process->stdout->on('data', function ($chunk) {
     echo $chunk;
 });
@@ -297,6 +308,54 @@ While process pipes and termination may seem confusing to newcomers, the above
 properties actually allow some fine grained control over process termination,
 such as first trying a soft-close and then applying a force-close after a
 timeout.
+
+### Custom pipes
+
+Following common Unix conventions, this library will start each child process
+with the three pipes matching the standard I/O streams by default. For more
+advanced use cases it may be useful to pass in custom pipes, such as explicitly
+passing additional file descriptors (FDs) or overriding default process pipes.
+
+Note that passing custom pipes is considered advanced usage and requires a
+more in-depth understanding of Unix file descriptors and how they are inherited
+to child processes and shared in multi-processing applications.
+
+If you do not want to use the default standard I/O pipes, you can explicitly
+pass an array containing the file descriptor specification to the constructor
+like this:
+
+```php
+$fds = array(
+    // standard I/O pipes for stdin/stdout/stderr
+    0 => array('pipe', 'r'),
+    1 => array('pipe', 'w'),
+    2 => array('pipe', 'w'),
+
+    // example FDs for files or open resources
+    4 => array('file', '/dev/null', 'r'),
+    6 => fopen('log.txt','a'),
+    8 => STDERR,
+
+    // example FDs for sockets
+    10 => fsockopen('localhost', 8080),
+    12 => stream_socket_server('tcp://0.0.0.0:4711')
+);
+
+$process = new Process($cmd, null, null, $fds);
+$process->start($loop);
+```
+
+Unless your use case has special requirements that demand otherwise, you're
+highly recommended to (at least) pass in the standard I/O pipes as given above.
+The file descriptor specification accepts arguments in the exact same format
+as the underlying [`proc_open()`](http://php.net/proc_open) function.
+
+Once the process is started, the `$pipes` array will always contain references to
+all pipes as configured and the standard I/O references will always be set to
+reference the pipes matching common Unix conventions. This library supports any
+number of pipes and additional file descriptors, but many common applications
+being run as a child process will expect that the parent process properly
+assigns these file descriptors.
 
 ### Sigchild Compatibility
 
