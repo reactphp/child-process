@@ -5,7 +5,9 @@ namespace React\ChildProcess;
 use Evenement\EventEmitter;
 use React\EventLoop\LoopInterface;
 use React\Stream\ReadableResourceStream;
+use React\Stream\ReadableStreamInterface;
 use React\Stream\WritableResourceStream;
+use React\Stream\WritableStreamInterface;
 
 /**
  * Process component.
@@ -17,15 +19,36 @@ use React\Stream\WritableResourceStream;
  */
 class Process extends EventEmitter
 {
+    /**
+     * @var ?WritableStreamInterface
+     */
     public $stdin;
+
+    /**
+     * @var ?ReadableStreamInterface
+     */
     public $stdout;
+
+    /**
+     * @var ?ReadableStreamInterface
+     */
     public $stderr;
+
+    /**
+     * Array with all process pipes (once started)
+     * - 0: STDIN (`WritableStreamInterface`)
+     * - 1: STDOUT (`ReadableStreamInterface`)
+     * - 2: STDERR (`ReadableStreamInterface`)
+     *
+     * @var ReadableStreamInterface|WritableStreamInterface
+     */
+    public $pipes = array();
 
     private $cmd;
     private $cwd;
     private $env;
     private $enhanceSigchildCompatibility;
-    private $pipes;
+    private $sigchildPipe;
 
     private $process;
     private $status;
@@ -90,13 +113,15 @@ class Process extends EventEmitter
             array('pipe', 'w'), // stderr
         );
 
+        $sigchild = null;
         // Read exit code through fourth pipe to work around --enable-sigchild
         if ($this->enhanceSigchildCompatibility) {
             $fdSpec[] = array('pipe', 'w');
-            $cmd = sprintf('(%s) 3>/dev/null; code=$?; echo $code >&3; exit $code', $cmd);
+            $sigchild = 3;
+            $cmd = sprintf('(%s) ' . $sigchild . '>/dev/null; code=$?; echo $code >&' . $sigchild . '; exit $code', $cmd);
         }
 
-        $this->process = proc_open($cmd, $fdSpec, $this->pipes, $this->cwd, $this->env);
+        $this->process = proc_open($cmd, $fdSpec, $pipes, $this->cwd, $this->env);
 
         if (!is_resource($this->process)) {
             throw new \RuntimeException('Unable to launch a new process.');
@@ -129,11 +154,24 @@ class Process extends EventEmitter
             });
         };
 
-        $this->stdin  = new WritableResourceStream($this->pipes[0], $loop);
-        $this->stdout = new ReadableResourceStream($this->pipes[1], $loop);
-        $this->stdout->on('close', $streamCloseHandler);
-        $this->stderr = new ReadableResourceStream($this->pipes[2], $loop);
-        $this->stderr->on('close', $streamCloseHandler);
+        if ($sigchild !== null) {
+            $this->sigchildPipe = $pipes[$sigchild];
+            unset($pipes[$sigchild]);
+        }
+
+        foreach ($pipes as $n => $fd) {
+            if ($n === 0) {
+                $stream = new WritableResourceStream($fd, $loop);
+            } else {
+                $stream = new ReadableResourceStream($fd, $loop);
+                $stream->on('close', $streamCloseHandler);
+            }
+            $this->pipes[$n] = $stream;
+        }
+
+        $this->stdin  = $this->pipes[0];
+        $this->stdout = $this->pipes[1];
+        $this->stderr = $this->pipes[2];
     }
 
     /**
@@ -337,11 +375,11 @@ class Process extends EventEmitter
      */
     private function pollExitCodePipe()
     {
-        if ( ! isset($this->pipes[3])) {
+        if ($this->sigchildPipe === null) {
             return;
         }
 
-        $r = array($this->pipes[3]);
+        $r = array($this->sigchildPipe);
         $w = $e = null;
 
         $n = @stream_select($r, $w, $e, 0);
@@ -364,12 +402,12 @@ class Process extends EventEmitter
      */
     private function closeExitCodePipe()
     {
-        if ( ! isset($this->pipes[3])) {
+        if ($this->sigchildPipe === null) {
             return;
         }
 
-        fclose($this->pipes[3]);
-        unset($this->pipes[3]);
+        fclose($this->sigchildPipe);
+        $this->sigchildPipe = null;
     }
 
     /**

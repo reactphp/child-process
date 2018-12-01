@@ -18,6 +18,30 @@ abstract class AbstractProcessTest extends TestCase
         $this->assertSame('echo foo', $process->getCommand());
     }
 
+    public function testPipesWillBeUnsetBeforeStarting()
+    {
+        $process = new Process('echo foo');
+
+        $this->assertNull($process->stdin);
+        $this->assertNull($process->stdout);
+        $this->assertNull($process->stderr);
+        $this->assertEquals(array(), $process->pipes);
+    }
+
+    public function testStartWillAssignPipes()
+    {
+        $process = new Process('echo foo');
+        $process->start($this->createLoop());
+
+        $this->assertInstanceOf('React\Stream\WritableStreamInterface', $process->stdin);
+        $this->assertInstanceOf('React\Stream\ReadableStreamInterface', $process->stdout);
+        $this->assertInstanceOf('React\Stream\ReadableStreamInterface', $process->stderr);
+        $this->assertCount(3, $process->pipes);
+        $this->assertSame($process->stdin, $process->pipes[0]);
+        $this->assertSame($process->stdout, $process->pipes[1]);
+        $this->assertSame($process->stderr, $process->pipes[2]);
+    }
+
     public function testIsRunning()
     {
         $process = new Process('sleep 1');

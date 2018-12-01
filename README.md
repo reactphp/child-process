@@ -52,16 +52,21 @@ See also the [examples](examples).
 
 Once a process is started, its I/O streams will be constructed as instances of
 `React\Stream\ReadableStreamInterface` and `React\Stream\WritableStreamInterface`. 
-Before `start()` is called, these properties are `null`.Once a process terminates, 
+Before `start()` is called, these properties are not set. Once a process terminates, 
 the streams will become closed but not unset.
 
-* `$stdin`
-* `$stdout`
-* `$stderr`
+* `$stdin`  or `$pipes[0]` is a `WritableStreamInterface`
+* `$stdout` or `$pipes[1]` is a `ReadableStreamInterface`
+* `$stderr` or `$pipes[2]` is a `ReadableStreamInterface`
 
-Each of these implement the underlying
+Following common Unix conventions, this library will always start each child
+process with the three pipes matching the standard I/O streams as given above.
+You can use the named references for common use cases or access these as an
+array with all three pipes.
+
+Because each of these implement the underlying
 [`ReadableStreamInterface`](https://github.com/reactphp/stream#readablestreaminterface) or 
-[`WritableStreamInterface`](https://github.com/reactphp/stream#writablestreaminterface) and 
+[`WritableStreamInterface`](https://github.com/reactphp/stream#writablestreaminterface), 
 you can use any of their events and methods as usual:
 
 ```php
@@ -255,10 +260,10 @@ $process = new Process('sleep 10');
 $process->start($loop);
 
 $loop->addTimer(2.0, function () use ($process) {
-    $process->stdin->close();
-    $process->stdout->close();
-    $process->stderr->close();
-    $process->terminate(SIGKILL);
+    foreach ($process->pipes as $pipe) {
+        $pipe->close();
+    }
+    $process->terminate();
 });
 ```
 
