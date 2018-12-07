@@ -11,6 +11,7 @@
     },
     "require-dev": {
         "phpunit/phpunit": "^7.0 || ^6.4 || ^5.7 || ^4.8.35",
+        "react/socket": "^1.0",
         "sebastian/environment": "^3.0 || ^2.0 || ^1.0"
     },
     "autoload": {

@@ -2,9 +2,12 @@
 
 use React\EventLoop\Factory;
 use React\ChildProcess\Process;
-use React\Stream\Stream;
 
 require __DIR__ . '/../vendor/autoload.php';
+
+if (DIRECTORY_SEPARATOR === '\\') {
+    exit('Process pipes not supported on Windows' . PHP_EOL);
+}
 
 $loop = Factory::create();
 

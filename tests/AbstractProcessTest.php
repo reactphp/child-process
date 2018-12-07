@@ -13,13 +13,17 @@ abstract class AbstractProcessTest extends TestCase
 
     public function testGetCommand()
     {
-        $process = new Process('echo foo');
+        $process = new Process('echo foo', null, null, array());
 
         $this->assertSame('echo foo', $process->getCommand());
     }
 
     public function testPipesWillBeUnsetBeforeStarting()
     {
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $this->markTestSkipped('Process pipes not supported on Windows');
+        }
+
         $process = new Process('echo foo');
 
         $this->assertNull($process->stdin);
@@ -28,6 +32,9 @@ abstract class AbstractProcessTest extends TestCase
         $this->assertEquals(array(), $process->pipes);
     }
 
+    /**
+     * @depends testPipesWillBeUnsetBeforeStarting
+     */
     public function testStartWillAssignPipes()
     {
         $process = new Process('echo foo');
@@ -55,6 +62,10 @@ abstract class AbstractProcessTest extends TestCase
 
     public function testStartWithCustomPipesWillAssignPipes()
     {
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $this->markTestSkipped('Process pipes not supported on Windows');
+        }
+
         $process = new Process('exit 0', null, null, array(
             0 => array('pipe', 'w'),
             3 => array('pipe', 'r')
@@ -71,7 +82,12 @@ abstract class AbstractProcessTest extends TestCase
 
     public function testIsRunning()
     {
-        $process = new Process('sleep 1');
+        if (DIRECTORY_SEPARATOR === '\\') {
+            // Windows doesn't have a sleep command and also does not support process pipes
+            $process = new Process('php -r ' . escapeshellarg('sleep(1);'), null, null, array());
+        } else {
+            $process = new Process('sleep 1');
+        }
 
         $this->assertFalse($process->isRunning());
         $process->start($this->createLoop());
@@ -98,6 +114,10 @@ abstract class AbstractProcessTest extends TestCase
 
     public function testCommandWithEnhancedSigchildCompatibilityReceivesExitCode()
     {
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $this->markTestSkipped('Process pipes not supported on Windows');
+        }
+
         $loop = $this->createLoop();
         $old = Process::isSigchildEnabled();
         Process::setSigchildEnabled(true);
@@ -112,6 +132,10 @@ abstract class AbstractProcessTest extends TestCase
 
     public function testReceivesProcessStdoutFromEcho()
     {
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $this->markTestSkipped('Process pipes not supported on Windows');
+        }
+
         $cmd = 'echo test';
 
         $loop = $this->createLoop();
@@ -128,8 +152,76 @@ abstract class AbstractProcessTest extends TestCase
         $this->assertEquals('test', rtrim($buffer));
     }
 
+    public function testReceivesProcessOutputFromStdoutRedirectedToFile()
+    {
+        $tmp = tmpfile();
+
+        $cmd = 'echo test';
+
+        $loop = $this->createLoop();
+        $process = new Process($cmd, null, null, array(1 => $tmp));
+        $process->start($loop);
+
+        $loop->run();
+
+        rewind($tmp);
+        $this->assertEquals('test', rtrim(stream_get_contents($tmp)));
+    }
+
+    public function testReceivesProcessOutputFromStdoutAttachedToSocket()
+    {
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $this->markTestSkipped('Sockets as STDIO handles not supported on Windows');
+        }
+
+        // create TCP/IP server on random port and create a client connection
+        $server = stream_socket_server('tcp://127.0.0.1:0');
+        $client = stream_socket_client(stream_socket_get_name($server, false));
+        $peer = stream_socket_accept($server, 0);
+        fclose($server);
+
+        $cmd = 'echo test';
+
+        $loop = $this->createLoop();
+
+        // spawn child process with $client socket as STDOUT, close local reference afterwards
+        $process = new Process($cmd, null, null, array(1 => $client));
+        $process->start($loop);
+        fclose($client);
+
+        $loop->run();
+
+        $this->assertEquals('test', rtrim(stream_get_contents($peer)));
+    }
+
+    public function testReceivesProcessOutputFromStdoutRedirectedToSocketProcess()
+    {
+        // create TCP/IP server on random port and wait for client connection
+        $server = stream_socket_server('tcp://127.0.0.1:0');
+
+        $cmd = 'echo test';
+        $code = '$s=stream_socket_client($argv[1]);do{$d=fread(STDIN,8192);fwrite($s,$d);}while(!feof(STDIN));fclose($s);';
+        $cmd .= ' | php -r ' . escapeshellarg($code) . ' ' . escapeshellarg(stream_socket_get_name($server, false));
+
+        $loop = $this->createLoop();
+
+        // spawn child process without any STDIO streams
+        $process = new Process($cmd, null, null, array());
+        $process->start($loop);
+
+        $peer = stream_socket_accept($server, 10);
+
+        $loop->run();
+
+        $this->assertEquals('test', rtrim(stream_get_contents($peer)));
+    }
+
     public function testReceivesProcessStdoutFromDd()
     {
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $this->markTestSkipped('Process pipes not supported on Windows');
+        }
+
         if (!file_exists('/dev/zero')) {
             $this->markTestSkipped('Unable to read from /dev/zero, Windows?');
         }
@@ -152,6 +244,10 @@ abstract class AbstractProcessTest extends TestCase
 
     public function testProcessPidNotSameDueToShellWrapper()
     {
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $this->markTestSkipped('Process pipes not supported on Windows');
+        }
+
         $cmd = $this->getPhpBinary() . ' -r ' . escapeshellarg('echo getmypid();');
 
         $loop = $this->createLoop();
@@ -172,6 +268,10 @@ abstract class AbstractProcessTest extends TestCase
 
     public function testProcessPidSameWithExec()
     {
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $this->markTestSkipped('Process pipes not supported on Windows');
+        }
+
         $cmd = 'exec ' . $this->getPhpBinary() . ' -r ' . escapeshellarg('echo getmypid();');
 
         $loop = $this->createLoop();
@@ -191,6 +291,10 @@ abstract class AbstractProcessTest extends TestCase
 
     public function testProcessWithDefaultCwdAndEnv()
     {
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $this->markTestSkipped('Process pipes not supported on Windows');
+        }
+
         $cmd = $this->getPhpBinary() . ' -r ' . escapeshellarg('echo getcwd(), PHP_EOL, count($_SERVER), PHP_EOL;');
 
         $loop = $this->createLoop();
@@ -217,6 +321,10 @@ abstract class AbstractProcessTest extends TestCase
 
     public function testProcessWithCwd()
     {
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $this->markTestSkipped('Process pipes not supported on Windows');
+        }
+
         $cmd = $this->getPhpBinary() . ' -r ' . escapeshellarg('echo getcwd(), PHP_EOL;');
 
         $loop = $this->createLoop();
@@ -236,6 +344,10 @@ abstract class AbstractProcessTest extends TestCase
 
     public function testProcessWithEnv()
     {
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $this->markTestSkipped('Process pipes not supported on Windows');
+        }
+
         if (getenv('TRAVIS')) {
             $this->markTestSkipped('Cannot execute PHP processes with custom environments on Travis CI.');
         }
@@ -259,6 +371,10 @@ abstract class AbstractProcessTest extends TestCase
 
     public function testStartAndAllowProcessToExitSuccessfullyUsingEventLoop()
     {
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $this->markTestSkipped('Process pipes not supported on Windows');
+        }
+
         $loop = $this->createLoop();
         $process = new Process('exit 0');
 
@@ -288,6 +404,10 @@ abstract class AbstractProcessTest extends TestCase
 
     public function testProcessWillExitFasterThanExitInterval()
     {
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $this->markTestSkipped('Process pipes not supported on Windows');
+        }
+
         $loop = $this->createLoop();
         $process = new Process('echo hi');
         $process->start($loop, 2);
@@ -301,6 +421,10 @@ abstract class AbstractProcessTest extends TestCase
 
     public function testDetectsClosingStdoutWithoutHavingToWaitForExit()
     {
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $this->markTestSkipped('Process pipes not supported on Windows');
+        }
+
         $cmd = 'exec ' . $this->getPhpBinary() . ' -r ' . escapeshellarg('fclose(STDOUT); sleep(1);');
 
         $loop = $this->createLoop();
@@ -324,6 +448,10 @@ abstract class AbstractProcessTest extends TestCase
 
     public function testKeepsRunningEvenWhenAllStdioPipesHaveBeenClosed()
     {
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $this->markTestSkipped('Process pipes not supported on Windows');
+        }
+
         $cmd = 'exec ' . $this->getPhpBinary() . ' -r ' . escapeshellarg('fclose(STDIN);fclose(STDOUT);fclose(STDERR);sleep(1);');
 
         $loop = $this->createLoop();
@@ -356,6 +484,10 @@ abstract class AbstractProcessTest extends TestCase
 
     public function testDetectsClosingProcessEvenWhenAllStdioPipesHaveBeenClosed()
     {
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $this->markTestSkipped('Process pipes not supported on Windows');
+        }
+
         $cmd = 'exec ' . $this->getPhpBinary() . ' -r ' . escapeshellarg('fclose(STDIN);fclose(STDOUT);fclose(STDERR);usleep(10000);');
 
         $loop = $this->createLoop();
@@ -386,6 +518,10 @@ abstract class AbstractProcessTest extends TestCase
 
     public function testStartInvalidProcess()
     {
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $this->markTestSkipped('Process pipes not supported on Windows');
+        }
+
         $cmd = tempnam(sys_get_temp_dir(), 'react');
 
         $loop = $this->createLoop();
@@ -410,7 +546,12 @@ abstract class AbstractProcessTest extends TestCase
      */
     public function testStartAlreadyRunningProcess()
     {
-        $process = new Process('sleep 1');
+        if (DIRECTORY_SEPARATOR === '\\') {
+            // Windows doesn't have a sleep command and also does not support process pipes
+            $process = new Process('php -r ' . escapeshellarg('sleep(1);'), null, null, array());
+        } else {
+            $process = new Process('sleep 1');
+        }
 
         $process->start($this->createLoop());
         $process->start($this->createLoop());
@@ -418,16 +559,27 @@ abstract class AbstractProcessTest extends TestCase
 
     public function testTerminateProcesWithoutStartingReturnsFalse()
     {
-        $process = new Process('sleep 1');
+        if (DIRECTORY_SEPARATOR === '\\') {
+            // Windows doesn't have a sleep command and also does not support process pipes
+            $process = new Process('php -r ' . escapeshellarg('sleep(1);'), null, null, array());
+        } else {
+            $process = new Process('sleep 1');
+        }
 
         $this->assertFalse($process->terminate());
     }
 
     public function testTerminateWillExit()
     {
+        if (DIRECTORY_SEPARATOR === '\\') {
+            // Windows doesn't have a sleep command and also does not support process pipes
+            $process = new Process('php -r ' . escapeshellarg('sleep(10);'), null, null, array());
+        } else {
+            $process = new Process('sleep 10');
+        }
+
         $loop = $this->createloop();
 
-        $process = new Process('sleep 10');
         $process->start($loop);
 
         $called = false;
@@ -435,9 +587,9 @@ abstract class AbstractProcessTest extends TestCase
             $called = true;
         });
 
-        $process->stdin->close();
-        $process->stdout->close();
-        $process->stderr->close();
+        foreach ($process->pipes as $pipe) {
+            $pipe->close();
+        }
         $process->terminate();
 
         $loop->run();
@@ -447,7 +599,7 @@ abstract class AbstractProcessTest extends TestCase
 
     public function testTerminateWithDefaultTermSignalUsingEventLoop()
     {
-        if (defined('PHP_WINDOWS_VERSION_BUILD')) {
+        if (DIRECTORY_SEPARATOR === '\\') {
             $this->markTestSkipped('Windows does not report signals via proc_get_status()');
         }
 
@@ -485,7 +637,7 @@ abstract class AbstractProcessTest extends TestCase
 
     public function testTerminateWithStopAndContinueSignalsUsingEventLoop()
     {
-        if (defined('PHP_WINDOWS_VERSION_BUILD')) {
+        if (DIRECTORY_SEPARATOR === '\\') {
             $this->markTestSkipped('Windows does not report signals via proc_get_status()');
         }
 
@@ -535,7 +687,12 @@ abstract class AbstractProcessTest extends TestCase
         $this->assertFalse($process->isTerminated());
     }
 
-    public function testIssue18() {
+    public function testIssue18()
+    {
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $this->markTestSkipped('Process pipes not supported on Windows');
+        }
+
         $loop = $this->createLoop();
 
         $testString = 'x';
@@ -585,7 +742,7 @@ abstract class AbstractProcessTest extends TestCase
      * Execute a callback at regular intervals until it returns successfully or
      * a timeout is reached.
      *
-     * @param Closure $callback Callback with one or more assertions
+     * @param \Closure $callback Callback with one or more assertions
      * @param integer $timeout  Time limit for callback to succeed (milliseconds)
      * @param integer $interval Interval for retrying the callback (milliseconds)
      * @throws PHPUnit_Framework_ExpectationFailedException Last exception raised by the callback
