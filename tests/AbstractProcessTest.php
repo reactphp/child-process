@@ -51,7 +51,11 @@ abstract class AbstractProcessTest extends TestCase
 
     public function testStartWithoutAnyPipesWillNotAssignPipes()
     {
-        $process = new Process('exit 0', null, null, array());
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $process = new Process('cmd /c exit 0', null, null, array());
+        } else {
+            $process = new Process('exit 0', null, null, array());
+        }
         $process->start($this->createLoop());
 
         $this->assertNull($process->stdin);
@@ -84,7 +88,7 @@ abstract class AbstractProcessTest extends TestCase
     {
         if (DIRECTORY_SEPARATOR === '\\') {
             // Windows doesn't have a sleep command and also does not support process pipes
-            $process = new Process('php -r ' . escapeshellarg('sleep(1);'), null, null, array());
+            $process = new Process($this->getPhpBinary() . ' -r ' . escapeshellarg('sleep(1);'), null, null, array());
         } else {
             $process = new Process('sleep 1');
         }
@@ -156,7 +160,11 @@ abstract class AbstractProcessTest extends TestCase
     {
         $tmp = tmpfile();
 
-        $cmd = 'echo test';
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $cmd = 'cmd /c echo test';
+        } else {
+            $cmd = 'echo test';
+        }
 
         $loop = $this->createLoop();
         $process = new Process($cmd, null, null, array(1 => $tmp));
@@ -166,6 +174,27 @@ abstract class AbstractProcessTest extends TestCase
 
         rewind($tmp);
         $this->assertEquals('test', rtrim(stream_get_contents($tmp)));
+    }
+
+    public function testReceivesProcessOutputFromTwoCommandsChainedStdoutRedirectedToFile()
+    {
+        $tmp = tmpfile();
+
+        if (DIRECTORY_SEPARATOR === '\\') {
+            // omit whitespace before "&&" and quotation marks as Windows will actually echo this otherwise
+            $cmd = 'cmd /c echo hello&& cmd /c echo world';
+        } else {
+            $cmd = 'echo "hello" && echo "world"';
+        }
+
+        $loop = $this->createLoop();
+        $process = new Process($cmd, null, null, array(1 => $tmp));
+        $process->start($loop);
+
+        $loop->run();
+
+        rewind($tmp);
+        $this->assertEquals("hello\nworld", str_replace("\r\n", "\n", rtrim(stream_get_contents($tmp))));
     }
 
     public function testReceivesProcessOutputFromStdoutAttachedToSocket()
@@ -199,9 +228,14 @@ abstract class AbstractProcessTest extends TestCase
         // create TCP/IP server on random port and wait for client connection
         $server = stream_socket_server('tcp://127.0.0.1:0');
 
-        $cmd = 'echo test';
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $cmd = 'cmd /c echo test';
+        } else {
+            $cmd = 'exec echo test';
+        }
+
         $code = '$s=stream_socket_client($argv[1]);do{$d=fread(STDIN,8192);fwrite($s,$d);}while(!feof(STDIN));fclose($s);';
-        $cmd .= ' | php -r ' . escapeshellarg($code) . ' ' . escapeshellarg(stream_socket_get_name($server, false));
+        $cmd .= ' | ' . $this->getPhpBinary() . ' -r ' . escapeshellarg($code) . ' ' . escapeshellarg(stream_socket_get_name($server, false));
 
         $loop = $this->createLoop();
 
@@ -505,7 +539,13 @@ abstract class AbstractProcessTest extends TestCase
     public function testDetectsClosingProcessEvenWhenStartedWithoutPipes()
     {
         $loop = $this->createLoop();
-        $process = new Process('exit 0', null, null, array());
+
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $process = new Process('cmd /c exit 0', null, null, array());
+        } else {
+            $process = new Process('exit 0', null, null, array());
+        }
+
         $process->start($loop, 0.001);
 
         $time = microtime(true);
@@ -548,10 +588,11 @@ abstract class AbstractProcessTest extends TestCase
     {
         if (DIRECTORY_SEPARATOR === '\\') {
             // Windows doesn't have a sleep command and also does not support process pipes
-            $process = new Process('php -r ' . escapeshellarg('sleep(1);'), null, null, array());
+            $process = new Process($this->getPhpBinary() . ' -r ' . escapeshellarg('sleep(1);'), null, null, array());
         } else {
             $process = new Process('sleep 1');
         }
+        //var_dump($process);
 
         $process->start($this->createLoop());
         $process->start($this->createLoop());
@@ -561,7 +602,7 @@ abstract class AbstractProcessTest extends TestCase
     {
         if (DIRECTORY_SEPARATOR === '\\') {
             // Windows doesn't have a sleep command and also does not support process pipes
-            $process = new Process('php -r ' . escapeshellarg('sleep(1);'), null, null, array());
+            $process = new Process($this->getPhpBinary() . ' -r ' . escapeshellarg('sleep(1);'), null, null, array());
         } else {
             $process = new Process('sleep 1');
         }
@@ -573,7 +614,7 @@ abstract class AbstractProcessTest extends TestCase
     {
         if (DIRECTORY_SEPARATOR === '\\') {
             // Windows doesn't have a sleep command and also does not support process pipes
-            $process = new Process('php -r ' . escapeshellarg('sleep(10);'), null, null, array());
+            $process = new Process($this->getPhpBinary() . ' -r ' . escapeshellarg('sleep(10);'), null, null, array());
         } else {
             $process = new Process('sleep 10');
         }
@@ -771,6 +812,11 @@ abstract class AbstractProcessTest extends TestCase
         }
     }
 
+    /**
+     * Returns the path to the PHP binary. This is already escapescaped via `escapeshellarg()`.
+     *
+     * @return string
+     */
     private function getPhpBinary()
     {
         $runtime = new Runtime();

@@ -145,7 +145,15 @@ class Process extends EventEmitter
             $cmd = sprintf('(%s) ' . $sigchild . '>/dev/null; code=$?; echo $code >&' . $sigchild . '; exit $code', $cmd);
         }
 
-        $this->process = proc_open($cmd, $fdSpec, $pipes, $this->cwd, $this->env);
+        // on Windows, we do not launch the given command line in a shell (cmd.exe) by default and omit any error dialogs
+        // the cmd.exe shell can explicitly be given as part of the command as detailed in both documentation and tests
+        $options = array();
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $options['bypass_shell'] = true;
+            $options['suppress_errors'] = true;
+        }
+
+        $this->process = proc_open($cmd, $fdSpec, $pipes, $this->cwd, $this->env, $options);
 
         if (!is_resource($this->process)) {
             throw new \RuntimeException('Unable to launch a new process.');

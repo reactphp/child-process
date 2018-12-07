@@ -116,10 +116,26 @@ $process = new Process('echo test');
 $process->start($loop);
 ```
 
+The command line string usually consists of a whitespace-separated list with
+your main executable bin and any number of arguments. Special care should be
+taken to escape or quote any arguments, escpecially if you pass any user input
+along. Likewise, keep in mind that especially on Windows, it is rather common to
+have path names containing spaces and other special characters. If you want to
+run a binary like this, you will have to ensure this is quoted as a single
+argument using `escapeshellarg()` like this:
+
+```php
+$bin = 'C:\\Program files (x86)\\PHP\\php.exe';
+$file = 'C:\\Users\\me\\Desktop\\Application\\main.php';
+
+$process = new Process(escapeshellarg($bin) . ' ' . escapeshellarg($file));
+$process->start($loop);
+```
+
 By default, PHP will launch processes by wrapping the given command line string
-in a `sh` command on Unix, so that the above example will actually execute
-`sh -c echo test` under the hood on Unix. On Windows, it will launch processes
-by wrapping it in a `cmd` shell like `cmd /C echo test`.
+in a `sh` command on Unix, so that the first example will actually execute
+`sh -c echo test` under the hood on Unix. On Windows, it will not launch
+processes by wrapping them in a shell.
 
 This is a very useful feature because it does not only allow you to pass single
 commands, but actually allows you to pass any kind of shell command line and
@@ -132,6 +148,12 @@ streams from the wrapping shell command like this:
 $process = new Process('echo run && demo || echo failed');
 $process->start($loop);
 ```
+
+> Note that [Windows support](#windows-compatibility) is limited in that it
+  doesn't support STDIO streams at all and also that processes will not be run
+  in a wrapping shell by default. If you want to run a shell built-in function
+  such as `echo hello` or `sleep 10`, you may have to prefix your command line
+  with an explicit shell like `cmd /c echo hello`.
 
 In other words, the underlying shell is responsible for managing this command
 line and launching the individual sub-commands and connecting their STDIO
@@ -163,7 +185,7 @@ $first->on('exit', function () use ($loop) {
 });
 ```
 
-Keep in mind that PHP uses the shell wrapper for ALL command lines.
+Keep in mind that PHP uses the shell wrapper for ALL command lines on Unix.
 While this may seem reasonable for more complex command lines, this actually
 also applies to running the most simple single command:
 
@@ -172,7 +194,7 @@ $process = new Process('yes');
 $process->start($loop);
 ```
 
-This will actually spawn a command hierarchy similar to this:
+This will actually spawn a command hierarchy similar to this on Unix:
 
 ```
 5480 … \_ php example.php
@@ -524,6 +546,18 @@ to run a child process on Windows, each with its own set of pros and cons:
     if you do not want to risk other processes connecting to the server socket.
     In this case, we suggest looking at the excellent
     [createprocess-windows](https://github.com/cubiclesoft/createprocess-windows).
+
+Additionally, note that the [command](#command) given to the `Process` will be
+passed to the underlying Windows-API
+([`CreateProcess`](https://docs.microsoft.com/en-us/windows/desktop/api/processthreadsapi/nf-processthreadsapi-createprocessa))
+as-is and the process will not be launched in a wrapping shell by default. In
+particular, this means that shell built-in functions such as `echo hello` or
+`sleep 10` may have to be prefixed with an explicit shell command like this:
+
+```php
+$process = new Process('cmd /c echo hello', null, null, $pipes);
+$process->start($loop);
+```
 
 ## Install
 
