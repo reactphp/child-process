@@ -308,12 +308,13 @@ abstract class AbstractProcessTest extends TestCase
         $process->start($loop);
 
         $closed = false;
-        $process->stdout->on('close', function () use (&$closed) {
+        $process->stdout->on('close', function () use (&$closed, $loop) {
             $closed = true;
+            $loop->stop();
         });
 
-        // run loop for 0.1s only
-        $loop->addTimer(0.1, function () use ($loop) {
+        // run loop for maximum of 0.5s only
+        $loop->addTimer(0.5, function () use ($loop) {
             $loop->stop();
         });
         $loop->run();
@@ -330,15 +331,21 @@ abstract class AbstractProcessTest extends TestCase
         $process->start($loop);
 
         $closed = 0;
-        $process->stdout->on('close', function () use (&$closed) {
+        $process->stdout->on('close', function () use (&$closed, $loop) {
             ++$closed;
+            if ($closed === 2) {
+                $loop->stop();
+            }
         });
-        $process->stderr->on('close', function () use (&$closed) {
+        $process->stderr->on('close', function () use (&$closed, $loop) {
             ++$closed;
+            if ($closed === 2) {
+                $loop->stop();
+            }
         });
 
-        // run loop for 0.1s only
-        $loop->addTimer(0.1, function () use ($loop) {
+        // run loop for maximum 0.5s only
+        $loop->addTimer(0.5, function () use ($loop) {
             $loop->stop();
         });
         $loop->run();
@@ -359,7 +366,7 @@ abstract class AbstractProcessTest extends TestCase
         $loop->run();
         $time = microtime(true) - $time;
 
-        $this->assertLessThan(0.1, $time);
+        $this->assertLessThan(0.5, $time);
         $this->assertSame(0, $process->getExitCode());
     }
 
