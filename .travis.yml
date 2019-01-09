@@ -7,7 +7,9 @@ php:
   - 5.6
   - 7.0
   - 7.1
-  - hhvm # ignore errors, see below
+  - 7.2
+  - 7.3
+# - hhvm # requires legacy phpunit & ignore errors, see below
 
 # lock distro so new future defaults will not break the build
 dist: trusty
@@ -16,6 +18,8 @@ matrix:
   include:
     - php: 5.3
       dist: precise
+    - php: hhvm
+      install: composer require phpunit/phpunit:^5 --dev --no-interaction
   allow_failures:
     - php: hhvm
 
@@ -23,7 +27,7 @@ sudo: false
 
 install:
   - composer install --no-interaction
-  
+
 script:
   - vendor/bin/phpunit --coverage-text
   - php examples/13-benchmark-throughput.php

@@ -180,8 +180,7 @@ class Process extends EventEmitter
         }
 
         foreach ($pipes as $n => $fd) {
-            $meta = \stream_get_meta_data($fd);
-            if (\strpos($meta['mode'], 'w') !== false) {
+            if (\strpos($this->fds[$n][1], 'w') === false) {
                 $stream = new WritableResourceStream($fd, $loop);
             } else {
                 $stream = new ReadableResourceStream($fd, $loop);
