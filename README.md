@@ -67,10 +67,11 @@ array with all three pipes.
 
 Note that this default configuration may be overridden by explicitly passing
 [custom pipes](#custom-pipes), in which case they may not be set or be assigned
-different values. The `$pipes` array will always contain references to all pipes
-as configured and the standard I/O references will always be set to reference
-the pipes matching the above conventions. See [custom pipes](#custom-pipes) for
-more details.
+different values. In particular, note that [Windows support](#windows-compatibility)
+is limited in that it doesn't support non-blocking STDIO pipes. The `$pipes`
+array will always contain references to all pipes as configured and the standard
+I/O references will always be set to reference the pipes matching the above
+conventions. See [custom pipes](#custom-pipes) for more details.
 
 Because each of these implement the underlying
 [`ReadableStreamInterface`](https://github.com/reactphp/stream#readablestreaminterface) or 
@@ -115,9 +116,26 @@ $process = new Process('echo test');
 $process->start($loop);
 ```
 
+The command line string usually consists of a whitespace-separated list with
+your main executable bin and any number of arguments. Special care should be
+taken to escape or quote any arguments, escpecially if you pass any user input
+along. Likewise, keep in mind that especially on Windows, it is rather common to
+have path names containing spaces and other special characters. If you want to
+run a binary like this, you will have to ensure this is quoted as a single
+argument using `escapeshellarg()` like this:
+
+```php
+$bin = 'C:\\Program files (x86)\\PHP\\php.exe';
+$file = 'C:\\Users\\me\\Desktop\\Application\\main.php';
+
+$process = new Process(escapeshellarg($bin) . ' ' . escapeshellarg($file));
+$process->start($loop);
+```
+
 By default, PHP will launch processes by wrapping the given command line string
-in a `sh` command, so that the above example will actually execute
-`sh -c echo test` under the hood.
+in a `sh` command on Unix, so that the first example will actually execute
+`sh -c echo test` under the hood on Unix. On Windows, it will not launch
+processes by wrapping them in a shell.
 
 This is a very useful feature because it does not only allow you to pass single
 commands, but actually allows you to pass any kind of shell command line and
@@ -130,6 +148,12 @@ streams from the wrapping shell command like this:
 $process = new Process('echo run && demo || echo failed');
 $process->start($loop);
 ```
+
+> Note that [Windows support](#windows-compatibility) is limited in that it
+  doesn't support STDIO streams at all and also that processes will not be run
+  in a wrapping shell by default. If you want to run a shell built-in function
+  such as `echo hello` or `sleep 10`, you may have to prefix your command line
+  with an explicit shell like `cmd /c echo hello`.
 
 In other words, the underlying shell is responsible for managing this command
 line and launching the individual sub-commands and connecting their STDIO
@@ -161,7 +185,7 @@ $first->on('exit', function () use ($loop) {
 });
 ```
 
-Keep in mind that PHP uses the shell wrapper for ALL command lines.
+Keep in mind that PHP uses the shell wrapper for ALL command lines on Unix.
 While this may seem reasonable for more complex command lines, this actually
 also applies to running the most simple single command:
 
@@ -170,7 +194,7 @@ $process = new Process('yes');
 $process->start($loop);
 ```
 
-This will actually spawn a command hierarchy similar to this:
+This will actually spawn a command hierarchy similar to this on Unix:
 
 ```
 5480 … \_ php example.php
@@ -183,8 +207,8 @@ will actually target the wrapping shell, which may not be the desired result
 in many cases.
 
 If you do not want this wrapping shell process to show up, you can simply
-prepend the command string with `exec`, which will cause the wrapping shell
-process to be replaced by our process:
+prepend the command string with `exec` on Unix platforms, which will cause the
+wrapping shell process to be replaced by our process:
 
 ```php
 $process = new Process('exec yes');
@@ -209,8 +233,8 @@ As a rule of thumb, most commands will likely run just fine with the wrapping
 shell.
 If you pass a complete command line (or are unsure), you SHOULD most likely keep
 the wrapping shell.
-If you want to pass an invidual command only, you MAY want to consider
-prepending the command string with `exec` to avoid the wrapping shell.
+If you're running on Unix and you want to pass an invidual command only, you MAY
+want to consider prepending the command string with `exec` to avoid the wrapping shell.
 
 ### Termination
 
@@ -396,12 +420,144 @@ cases. You may then enable this  explicitly as given above.
 
 ### Windows Compatibility
 
-Due to the blocking nature of `STDIN`/`STDOUT`/`STDERR` pipes on Windows we can 
-not guarantee this package works as expected on Windows directly. As such when 
-instantiating `Process` it throws an exception when on native Windows. 
-However this package does work on [`Windows Subsystem for Linux`](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux) 
-(or WSL) without issues. We suggest [installing WSL](https://msdn.microsoft.com/en-us/commandline/wsl/install_guide) 
-when you want to run this package on Windows.
+Due to platform constraints, this library provides only limited support for
+spawning child processes on Windows. In particular, PHP does not allow accessing
+standard I/O pipes without blocking. As such, this project will not allow
+constructing a child process with the default process pipes and will instead
+throw a `LogicException` on Windows by default:
+
+```php
+// throws LogicException on Windows
+$process = new Process('ping example.com');
+$process->start($loop);
+```
+
+There are a number of alternatives and workarounds as detailed below if you want
+to run a child process on Windows, each with its own set of pros and cons:
+
+*   This package does work on
+    [`Windows Subsystem for Linux`](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux)
+    (or WSL) without issues. When you are in control over how your application is
+    deployed, we recommend [installing WSL](https://msdn.microsoft.com/en-us/commandline/wsl/install_guide)
+    when you want to run this package on Windows.
+
+*   If you only care about the exit code of a child process to check if its
+    execution was successful, you can use [custom pipes](#custom-pipes) to omit
+    any standard I/O pipes like this:
+
+    ```php
+    $process = new Process('ping example.com', null, null, array());
+    $process->start($loop);
+
+    $process->on('exit', function ($exitcode) {
+        echo 'exit with ' . $exitcode . PHP_EOL;
+    });
+    ```
+
+    Similarly, this is also useful if your child process communicates over
+    sockets with remote servers or even your parent process using the
+    [Socket component](https://github.com/reactphp/socket). This is usually
+    considered the best alternative if you have control over how your child
+    process communicates with the parent process.
+
+*   If you only care about command output after the child process has been
+    executed, you can use [custom pipes](#custom-pipes) to configure file
+    handles to be passed to the child process instead of pipes like this:
+
+    ```php
+    $process = new Process('ping example.com', null, null, array(
+        array('file', 'nul', 'r'),
+        $stdout = tmpfile(),
+        array('file', 'nul', 'w')
+    ));
+    $process->start($loop);
+
+    $process->on('exit', function ($exitcode) use ($stdout) {
+        echo 'exit with ' . $exitcode . PHP_EOL;
+
+        // rewind to start and then read full file (demo only, this is blocking).
+        // reading from shared file is only safe if you have some synchronization in place
+        // or after the child process has terminated.
+        rewind($stdout);
+        echo stream_get_contents($stdout);
+        fclose($stdout);
+    });
+    ```
+
+    Note that this example uses `tmpfile()`/`fopen()` for illustration purposes only.
+    This should not be used in a truly async program because the filesystem is
+    inherently blocking and each call could potentially take several seconds.
+    See also the [Filesystem component](https://github.com/reactphp/filesystem) as an
+    alternative.
+
+*   If you want to access command output as it happens in a streaming fashion,
+    you can use redirection to spawn an additional process to forward your
+    standard I/O streams to a socket and use [custom pipes](#custom-pipes) to
+    omit any actual standard I/O pipes like this:
+
+    ```php
+    $server = new React\Socket\Server('127.0.0.1:0', $loop);
+    $server->on('connection', function (React\Socket\ConnectionInterface $connection) {
+        $connection->on('data', function ($chunk) {
+            echo $chunk;
+        });
+    });
+
+    $command = 'ping example.com | foobar ' . escapeshellarg($server->getAddress());
+    $process = new Process($command, null, null, array());
+    $process->start($loop);
+
+    $process->on('exit', function ($exitcode) use ($server) {
+        $server->close();
+        echo 'exit with ' . $exitcode . PHP_EOL;
+    });
+    ```
+
+    Note how this will spawn another fictional `foobar` helper program to consume
+    the standard output from the actual child process. This is in fact similar
+    to the above recommendation of using socket connections in the child process,
+    but in this case does not require modification of the actual child process.
+
+    In this example, the fictional `foobar` helper program can be implemented by
+    simply consuming all data from standard input and forwarding it to a socket
+    connection like this:
+
+    ```php
+    $socket = stream_socket_client($argv[1]);
+    do {
+        fwrite($socket, $data = fread(STDIN, 8192));
+    } while (isset($data[0]));
+    ```
+
+    Accordingly, this example can also be run with plain PHP without having to
+    rely on any external helper program like this:
+
+    ```php
+    $code = '$s=stream_socket_client($argv[1]);do{fwrite($s,$d=fread(STDIN, 8192));}while(isset($d[0]));';
+    $command = 'ping example.com | php -r ' . escapeshellarg($code) . ' ' . escapeshellarg($server->getAddress());
+    $process = new Process($command, null, null, array());
+    $process->start($loop);
+    ```
+
+    See also [example #23](examples/23-forward-socket.php).
+
+    Note that this is for illustration purposes only and you may want to implement
+    some proper error checks and/or socket verification in actual production use
+    if you do not want to risk other processes connecting to the server socket.
+    In this case, we suggest looking at the excellent
+    [createprocess-windows](https://github.com/cubiclesoft/createprocess-windows).
+
+Additionally, note that the [command](#command) given to the `Process` will be
+passed to the underlying Windows-API
+([`CreateProcess`](https://docs.microsoft.com/en-us/windows/desktop/api/processthreadsapi/nf-processthreadsapi-createprocessa))
+as-is and the process will not be launched in a wrapping shell by default. In
+particular, this means that shell built-in functions such as `echo hello` or
+`sleep 10` may have to be prefixed with an explicit shell command like this:
+
+```php
+$process = new Process('cmd /c echo hello', null, null, $pipes);
+$process->start($loop);
+```
 
 ## Install
 

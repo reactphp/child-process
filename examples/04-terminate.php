@@ -8,7 +8,7 @@ require __DIR__ . '/../vendor/autoload.php';
 $loop = Factory::create();
 
 // start a process that takes 10s to terminate
-$process = new Process('sleep 10');
+$process = new Process('php -r "sleep(10);"', null, null, array());
 $process->start($loop);
 
 // report when process exits

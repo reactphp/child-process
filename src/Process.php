@@ -75,10 +75,6 @@ class Process extends EventEmitter
     */
     public function __construct($cmd, $cwd = null, array $env = null, array $fds = null)
     {
-        if (substr(strtolower(PHP_OS), 0, 3) === 'win') {
-            throw new \LogicException('Windows isn\'t supported due to the blocking nature of STDIN/STDOUT/STDERR pipes.');
-        }
-
         if (!function_exists('proc_open')) {
             throw new \LogicException('The Process class relies on proc_open(), which is not available on your PHP installation.');
         }
@@ -99,6 +95,14 @@ class Process extends EventEmitter
                 array('pipe', 'w'), // stdout
                 array('pipe', 'w'), // stderr
             );
+        }
+
+        if (DIRECTORY_SEPARATOR === '\\') {
+            foreach ($fds as $fd) {
+                if (isset($fd[0]) && $fd[0] === 'pipe') {
+                    throw new \LogicException('Process pipes are not supported on Windows due to their blocking nature on Windows');
+                }
+            }
         }
 
         $this->fds = $fds;
@@ -141,7 +145,15 @@ class Process extends EventEmitter
             $cmd = sprintf('(%s) ' . $sigchild . '>/dev/null; code=$?; echo $code >&' . $sigchild . '; exit $code', $cmd);
         }
 
-        $this->process = proc_open($cmd, $fdSpec, $pipes, $this->cwd, $this->env);
+        // on Windows, we do not launch the given command line in a shell (cmd.exe) by default and omit any error dialogs
+        // the cmd.exe shell can explicitly be given as part of the command as detailed in both documentation and tests
+        $options = array();
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $options['bypass_shell'] = true;
+            $options['suppress_errors'] = true;
+        }
+
+        $this->process = proc_open($cmd, $fdSpec, $pipes, $this->cwd, $this->env, $options);
 
         if (!is_resource($this->process)) {
             throw new \RuntimeException('Unable to launch a new process.');
