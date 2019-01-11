@@ -75,7 +75,7 @@ class Process extends EventEmitter
     */
     public function __construct($cmd, $cwd = null, array $env = null, array $fds = null)
     {
-        if (!function_exists('proc_open')) {
+        if (!\function_exists('proc_open')) {
             throw new \LogicException('The Process class relies on proc_open(), which is not available on your PHP installation.');
         }
 
@@ -97,7 +97,7 @@ class Process extends EventEmitter
             );
         }
 
-        if (DIRECTORY_SEPARATOR === '\\') {
+        if (\DIRECTORY_SEPARATOR === '\\') {
             foreach ($fds as $fd) {
                 if (isset($fd[0]) && $fd[0] === 'pipe') {
                     throw new \LogicException('Process pipes are not supported on Windows due to their blocking nature on Windows');
@@ -142,20 +142,20 @@ class Process extends EventEmitter
                 $sigchild = 3;
             }
 
-            $cmd = sprintf('(%s) ' . $sigchild . '>/dev/null; code=$?; echo $code >&' . $sigchild . '; exit $code', $cmd);
+            $cmd = \sprintf('(%s) ' . $sigchild . '>/dev/null; code=$?; echo $code >&' . $sigchild . '; exit $code', $cmd);
         }
 
         // on Windows, we do not launch the given command line in a shell (cmd.exe) by default and omit any error dialogs
         // the cmd.exe shell can explicitly be given as part of the command as detailed in both documentation and tests
         $options = array();
-        if (DIRECTORY_SEPARATOR === '\\') {
+        if (\DIRECTORY_SEPARATOR === '\\') {
             $options['bypass_shell'] = true;
             $options['suppress_errors'] = true;
         }
 
-        $this->process = proc_open($cmd, $fdSpec, $pipes, $this->cwd, $this->env, $options);
+        $this->process = \proc_open($cmd, $fdSpec, $pipes, $this->cwd, $this->env, $options);
 
-        if (!is_resource($this->process)) {
+        if (!\is_resource($this->process)) {
             throw new \RuntimeException('Unable to launch a new process.');
         }
 
@@ -233,7 +233,7 @@ class Process extends EventEmitter
             $this->closeExitCodePipe();
         }
 
-        $exitCode = proc_close($this->process);
+        $exitCode = \proc_close($this->process);
         $this->process = null;
 
         if ($this->exitCode === null && $exitCode !== -1) {
@@ -263,10 +263,10 @@ class Process extends EventEmitter
         }
 
         if ($signal !== null) {
-            return proc_terminate($this->process, $signal);
+            return \proc_terminate($this->process, $signal);
         }
 
-        return proc_terminate($this->process);
+        return \proc_terminate($this->process);
     }
 
     /**
@@ -385,10 +385,10 @@ class Process extends EventEmitter
             return self::$sigchild;
         }
 
-        ob_start();
-        phpinfo(INFO_GENERAL);
+        \ob_start();
+        \phpinfo(INFO_GENERAL);
 
-        return self::$sigchild = false !== strpos(ob_get_clean(), '--enable-sigchild');
+        return self::$sigchild = false !== \strpos(\ob_get_clean(), '--enable-sigchild');
     }
 
     /**
@@ -420,15 +420,15 @@ class Process extends EventEmitter
         $r = array($this->sigchildPipe);
         $w = $e = null;
 
-        $n = @stream_select($r, $w, $e, 0);
+        $n = @\stream_select($r, $w, $e, 0);
 
         if (1 !== $n) {
             return;
         }
 
-        $data = fread($r[0], 8192);
+        $data = \fread($r[0], 8192);
 
-        if (strlen($data) > 0) {
+        if (\strlen($data) > 0) {
             $this->fallbackExitCode = (int) $data;
         }
     }
@@ -444,7 +444,7 @@ class Process extends EventEmitter
             return;
         }
 
-        fclose($this->sigchildPipe);
+        \fclose($this->sigchildPipe);
         $this->sigchildPipe = null;
     }
 
@@ -487,7 +487,7 @@ class Process extends EventEmitter
             return;
         }
 
-        $this->status = proc_get_status($this->process);
+        $this->status = \proc_get_status($this->process);
 
         if ($this->status === false) {
             throw new \UnexpectedValueException('proc_get_status() failed');
