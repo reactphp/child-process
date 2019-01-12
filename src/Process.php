@@ -15,7 +15,43 @@ use React\Stream\WritableStreamInterface;
  * This class borrows logic from Symfony's Process component for ensuring
  * compatibility when PHP is compiled with the --enable-sigchild option.
  *
- * @event exit
+ * This class also implements the `EventEmitterInterface`
+ * which allows you to react to certain events:
+ *
+ * exit event:
+ *     The `exit` event will be emitted whenever the process is no longer running.
+ *     Event listeners will receive the exit code and termination signal as two
+ *     arguments:
+ *
+ *     ```php
+ *     $process = new Process('sleep 10');
+ *     $process->start($loop);
+ *
+ *     $process->on('exit', function ($code, $term) {
+ *         if ($term === null) {
+ *             echo 'exit with code ' . $code . PHP_EOL;
+ *         } else {
+ *             echo 'terminated with signal ' . $term . PHP_EOL;
+ *         }
+ *     });
+ *     ```
+ *
+ *     Note that `$code` is `null` if the process has terminated, but the exit
+ *     code could not be determined (for example
+ *     [sigchild compatibility](#sigchild-compatibility) was disabled).
+ *     Similarly, `$term` is `null` unless the process has terminated in response to
+ *     an uncaught signal sent to it.
+ *     This is not a limitation of this project, but actual how exit codes and signals
+ *     are exposed on POSIX systems, for more details see also
+ *     [here](https://unix.stackexchange.com/questions/99112/default-exit-code-when-process-is-terminated).
+ *
+ *     It's also worth noting that process termination depends on all file descriptors
+ *     being closed beforehand.
+ *     This means that all [process pipes](#stream-properties) will emit a `close`
+ *     event before the `exit` event and that no more `data` events will arrive after
+ *     the `exit` event.
+ *     Accordingly, if either of these pipes is in a paused state (`pause()` method
+ *     or internally due to a `pipe()` call), this detection may not trigger.
  */
 class Process extends EventEmitter
 {
@@ -254,7 +290,7 @@ class Process extends EventEmitter
      * Terminate the process with an optional signal.
      *
      * @param int $signal Optional signal (default: SIGTERM)
-     * @return boolean Whether the signal was sent successfully
+     * @return bool Whether the signal was sent successfully
      */
     public function terminate($signal = null)
     {
@@ -336,7 +372,7 @@ class Process extends EventEmitter
     /**
      * Return whether the process is still running.
      *
-     * @return boolean
+     * @return bool
      */
     public function isRunning()
     {
@@ -352,7 +388,7 @@ class Process extends EventEmitter
     /**
      * Return whether the process has been stopped by a signal.
      *
-     * @return boolean
+     * @return bool
      */
     public function isStopped()
     {
@@ -364,7 +400,7 @@ class Process extends EventEmitter
     /**
      * Return whether the process has been terminated by an uncaught signal.
      *
-     * @return boolean
+     * @return bool
      */
     public function isTerminated()
     {
@@ -398,7 +434,7 @@ class Process extends EventEmitter
      * determine the success of a process when PHP has been compiled with
      * the --enable-sigchild option.
      *
-     * @param boolean $sigchild
+     * @param bool $sigchild
      * @return void
      */
     public final static function setSigchildEnabled($sigchild)
