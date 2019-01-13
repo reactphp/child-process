@@ -20,8 +20,15 @@ matrix:
       dist: precise
     - php: hhvm
       install: composer require phpunit/phpunit:^5 --dev --no-interaction
+    - name: "Mac OS X"
+      os: osx
+      language: generic # no built-in php support
+      before_install:
+      - brew install php || brew install php # retry if it doesn't work on first try
+      - brew install composer
   allow_failures:
     - php: hhvm
+    - os: osx
 
 sudo: false
 
