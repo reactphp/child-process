@@ -26,9 +26,17 @@ matrix:
       before_install:
       - brew install php || brew install php # retry if it doesn't work on first try
       - brew install composer
+    - name: "Windows"
+      os: windows
+      language: shell # no built-in php support
+      before_install:
+        - choco install php
+        - choco install composer
+        - export PATH="$(powershell -Command '("Process", "Machine" | % { [Environment]::GetEnvironmentVariable("PATH", $_) -Split ";" -Replace "\\$", "" } | Select -Unique | % { cygpath $_ }) -Join ":"')"
   allow_failures:
     - php: hhvm
     - os: osx
+    - os: windows
 
 sudo: false
 
