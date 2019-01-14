@@ -1,5 +1,52 @@
 # Changelog
 
+## 0.6.0 (2019-01-14)
+
+A major feature release with some minor API improvements!
+This project now has limited Windows support and supports passing custom pipes
+and file descriptors to the child process.
+
+This update involves a few minor BC breaks. We've tried hard to avoid BC breaks
+where possible and minimize impact otherwise. We expect that most consumers of
+this package will actually not be affected by any BC breaks, see below for more
+details.
+
+*   Feature / BC break: Support passing custom pipes and file descriptors to child process,
+    expose all standard I/O pipes in an array and remove unused Windows-only options.
+    (#62, #64 and #65 by @clue)
+
+    > BC note: The optional `$options` parameter in the `Process` constructor
+      has been removed and a new `$fds` parameter has been added instead. The
+      previous `$options` parameter was Windows-only, available options were not
+      documented or referenced anywhere else in this library, so its actual
+      impact is expected to be relatively small. See the documentation and the
+      following changelog entry if you're looking for Windows support.
+
+*   Feature: Support spawning child process on Windows without process I/O pipes.
+    (#67 by @clue)
+
+*   Feature / BC break: Improve sigchild compatibility and support explicit configuration.
+    (#63 by @clue)
+
+    ```php
+    // advanced: not recommended by default
+    Process::setSigchildEnabled(true);
+    ```
+
+    > BC note: The old public sigchild methods have been removed, but its
+      practical impact is believed to be relatively small due to the automatic detection.
+
+*   Improve performance by prefixing all global functions calls with \ to skip
+    the look up and resolve process and go straight to the global function.
+    (#68 by @WyriHaximus)
+
+*   Minor documentation improvements and docblock updates.
+    (#59 by @iamluc and #69 by @CharlotteDunois)
+
+*   Improve test suite to test against PHP7.2 and PHP 7.3, improve HHVM compatibility,
+    add forward compatibility with PHPUnit 7 and run tests on Windows via Travis CI.
+    (#66 and #71 by @clue)
+
 ## 0.5.2 (2018-01-18)
 
 *   Feature: Detect "exit" immediately if last process pipe is closed
