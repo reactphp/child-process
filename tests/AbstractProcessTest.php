@@ -84,6 +84,56 @@ abstract class AbstractProcessTest extends TestCase
         $this->assertInstanceOf('React\Stream\WritableStreamInterface', $process->pipes[3]);
     }
 
+    /**
+     * @expectedException RuntimeException
+     * @expectedExceptionMessage No such file or directory
+     */
+    public function testStartWithInvalidFileDescriptorPathWillThrow()
+    {
+        $fds = array(
+            4 => array('file', '/dev/does-not-exist', 'r')
+        );
+
+        $process = new Process('exit 0', null, null, $fds);
+        $process->start($this->createLoop());
+    }
+
+    public function testStartWithExcessiveNumberOfFileDescriptorsWillThrow()
+    {
+        if (PHP_VERSION_ID < 70000) {
+            $this->markTestSkipped('PHP 7+ only, causes memory overflow on legacy PHP 5');
+        }
+
+        $ulimit = exec('ulimit -n 2>&1');
+        if ($ulimit < 1) {
+            $this->markTestSkipped('Unable to determine limit of open files (ulimit not available?)');
+        }
+
+        $loop = $this->createLoop();
+
+        // create 70% (usually ~700) dummy file handles in this parent dummy
+        $limit = (int)($ulimit * 0.7);
+        $fds = array();
+        for ($i = 0; $i < $limit; ++$i) {
+            $fds[$i] = fopen('/dev/null', 'r');
+        }
+
+        // try to create child process with another ~700 dummy file handles
+        $new = array_fill(0, $limit, array('file', '/dev/null', 'r'));
+        $process = new Process('ping example.com', null, null, $new);
+
+        try {
+            $process->start($loop);
+
+            $this->fail('Did not expect to reach this point');
+        } catch (\RuntimeException $e) {
+            // clear dummy files handles to make some room again (avoid fatal errors for autoloader)
+            $fds = array();
+
+            $this->assertContains('Too many open files', $e->getMessage());
+        }
+    }
+
     public function testIsRunning()
     {
         if (DIRECTORY_SEPARATOR === '\\') {
