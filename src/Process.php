@@ -189,10 +189,11 @@ class Process extends EventEmitter
             $options['suppress_errors'] = true;
         }
 
-        $this->process = \proc_open($cmd, $fdSpec, $pipes, $this->cwd, $this->env, $options);
+        $this->process = @\proc_open($cmd, $fdSpec, $pipes, $this->cwd, $this->env, $options);
 
         if (!\is_resource($this->process)) {
-            throw new \RuntimeException('Unable to launch a new process.');
+            $error = \error_get_last();
+            throw new \RuntimeException('Unable to launch a new process: ' . $error['message']);
         }
 
         // count open process pipes and await close event for each to drain buffers before detecting exit
