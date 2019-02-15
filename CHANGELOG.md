@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.1 (2019-02-15)
+
+*   Feature / Fix: Improve error reporting when spawning child process fails.
+    (#73 by @clue)
+
 ## 0.6.0 (2019-01-14)
 
 A major feature release with some minor API improvements!
