@@ -453,6 +453,19 @@ abstract class AbstractProcessTest extends TestCase
         $this->assertSame('bar' . PHP_EOL, $output);
     }
 
+    public function testIOBufferSizes()
+    {
+        $loop = $this->createLoop();
+
+        $process = new Process('echo hi');
+        $process->setPipeBufferSizes(array(20000, 50000, 10000));
+        $process->start($loop);
+
+        $this->assertSame(20000, self::getObjectAttribute($process->stdin, 'softLimit'));
+        $this->assertSame(50000, self::getObjectAttribute($process->stdout, 'bufferSize'));
+        $this->assertSame(10000, self::getObjectAttribute($process->stderr, 'bufferSize'));
+    }
+
     public function testStartAndAllowProcessToExitSuccessfullyUsingEventLoop()
     {
         if (DIRECTORY_SEPARATOR === '\\') {

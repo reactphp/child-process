@@ -87,6 +87,7 @@ class Process extends EventEmitter
     private $cwd;
     private $env;
     private $fds;
+    private $pipeBufferSizes;
 
     private $enhanceSigchildCompatibility;
     private $sigchildPipe;
@@ -143,6 +144,38 @@ class Process extends EventEmitter
 
         $this->fds = $fds;
         $this->enhanceSigchildCompatibility = self::isSigchildEnabled();
+    }
+
+    /**
+     * Set buffer sizes of I/O streams used. For example
+     * ```php
+     * [25000, 100000, null]
+     * ```
+     * means that buffer sizes are 25000 bytes for stdin,
+     * 100000 bytes for stdout and default value for stderr.
+     *
+     * @param array $pipeBufferSizes The sizes of pipes used.
+     */
+    public function setPipeBufferSizes($pipeBufferSizes)
+    {
+        if (!is_array($pipeBufferSizes)) {
+            throw new \InvalidArgumentException('pipeBufferSizes must be an array.');
+        }
+
+        foreach ($pipeBufferSizes as $key => $size) {
+            if (!is_int($key) || $key < 0) {
+                throw new \InvalidArgumentException(
+                    'pipeBufferSizes is invalid. Keys of pipeBufferSizes must be integer greater or equal to zero'
+                );
+            }
+            if ($size !== null && (!is_int($size) || $size <= 0)) {
+                throw new \InvalidArgumentException(
+                    'Values of pipeBufferSizes must be integer greater than zero, or null'
+                );
+            }
+        }
+
+        $this->pipeBufferSizes = $pipeBufferSizes;
     }
 
     /**
@@ -229,10 +262,11 @@ class Process extends EventEmitter
         }
 
         foreach ($pipes as $n => $fd) {
+            $bufferSize = isset($this->pipeBufferSizes[$n]) ? $this->pipeBufferSizes[$n] : null;
             if (\strpos($this->fds[$n][1], 'w') === false) {
-                $stream = new WritableResourceStream($fd, $loop);
+                $stream = new WritableResourceStream($fd, $loop, $bufferSize);
             } else {
-                $stream = new ReadableResourceStream($fd, $loop);
+                $stream = new ReadableResourceStream($fd, $loop, $bufferSize);
                 $stream->on('close', $streamCloseHandler);
                 $closeCount++;
             }
