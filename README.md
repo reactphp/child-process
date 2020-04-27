@@ -15,6 +15,9 @@ as [Streams](https://github.com/reactphp/stream).
 **Table of contents**
 
 * [Quickstart example](#quickstart-example)
+* [Process Interface](#process-interface)
+  * [Pipes](#pipes)
+  * [Events](#events)
 * [Process](#process)
   * [Stream Properties](#stream-properties)
   * [Command](#command)
@@ -46,6 +49,38 @@ $loop->run();
 ```
 
 See also the [examples](examples).
+
+## Process Interface
+
+The `ProcessInterface` interface defines a minimal public interface on how you can
+interact with the process, as different implementations provide different
+APIs and features. How the process has to be created is not detailed, as different
+implementations have different mechanism.
+
+### Pipes
+
+Even though pipe creations are implementation details, getting opened pipes are
+standardized through four method interfaces:
+
+```php
+function getStdin(): WritableStreamInterface|DuplexStreamInterface|null;
+function getStdout(): ReadableStreamInterface|DuplexStreamInterface|null;
+function getStderr(): ReadableStreamInterface|DuplexStreamInterface|null;
+function getPipes(): array<ReadableStreamInterface|WritableStreamInterface|DuplexStreamInterface>;
+```
+
+### Events
+
+The process interface extends the `EventEmitterInterface` to be able to emit events,
+to achieve reactions to child process deaths as bare minimum.
+
+#### Exit event
+
+The `exit` event will be emitted whenever the process is no longer running.
+Event listeners will receive the exit code and termination signal as two
+nullable integer arguments.
+
+When you receive which values depends on the Child Process implementation.
 
 ## Process
 

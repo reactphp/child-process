@@ -4,6 +4,7 @@ namespace React\ChildProcess;
 
 use Evenement\EventEmitter;
 use React\EventLoop\LoopInterface;
+use React\Stream\DuplexStreamInterface;
 use React\Stream\ReadableResourceStream;
 use React\Stream\ReadableStreamInterface;
 use React\Stream\WritableResourceStream;
@@ -53,7 +54,7 @@ use React\Stream\WritableStreamInterface;
  *     Accordingly, if either of these pipes is in a paused state (`pause()` method
  *     or internally due to a `pipe()` call), this detection may not trigger.
  */
-class Process extends EventEmitter
+class Process extends EventEmitter implements ProcessInterface
 {
     /**
      * @var WritableStreamInterface|null|ReadableStreamInterface
@@ -79,7 +80,7 @@ class Process extends EventEmitter
      * - 1: STDOUT (`ReadableStreamInterface`)
      * - 2: STDERR (`ReadableStreamInterface`)
      *
-     * @var ReadableStreamInterface|WritableStreamInterface
+     * @var ReadableStreamInterface[]|WritableStreamInterface[]|DuplexStreamInterface[]
      */
     public $pipes = array();
 
@@ -143,6 +144,46 @@ class Process extends EventEmitter
 
         $this->fds = $fds;
         $this->enhanceSigchildCompatibility = self::isSigchildEnabled();
+    }
+
+    /**
+     * Get the stdin pipe stream of the process, or null if none created.
+     *
+     * @return WritableStreamInterface|DuplexStreamInterface|null
+     */
+    public function getStdin()
+    {
+        return $this->stdin;
+    }
+
+    /**
+     * Get the stdout pipe stream of the process, or null if none created.
+     *
+     * @return ReadableStreamInterface|DuplexStreamInterface|null
+     */
+    public function getStdout()
+    {
+        return $this->stdout;
+    }
+
+    /**
+     * Get the stderr pipe stream of the process, or null if none created.
+     *
+     * @return ReadableStreamInterface|DuplexStreamInterface|null
+     */
+    public function getStderr()
+    {
+        return $this->stderr;
+    }
+
+    /**
+     * Get all created pipes as array.
+     *
+     * @return ReadableStreamInterface[]|WritableStreamInterface[]|DuplexStreamInterface[]
+     */
+    public function getPipes()
+    {
+        return $this->pipes;
     }
 
     /**

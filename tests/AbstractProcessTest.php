@@ -5,6 +5,7 @@ namespace React\Tests\ChildProcess;
 use PHPUnit\Framework\ExpectationFailedException;
 use PHPUnit\Framework\TestCase;
 use React\ChildProcess\Process;
+use React\EventLoop\Factory;
 use SebastianBergmann\Environment\Runtime;
 
 abstract class AbstractProcessTest extends TestCase
@@ -13,9 +14,151 @@ abstract class AbstractProcessTest extends TestCase
 
     public function testGetCommand()
     {
-        $process = new Process('echo foo', null, null, array());
+        $cmd = (DIRECTORY_SEPARATOR === '\\' ? 'cmd.exe /C echo foo >nul' : 'echo foo >/dev/null');
+        $process = new Process($cmd, null, null, array());
 
-        $this->assertSame('echo foo', $process->getCommand());
+        $this->assertSame($cmd, $process->getCommand());
+    }
+
+    public function testGetStdin()
+    {
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $this->markTestSkipped('Process pipes not supported on Windows');
+        }
+
+        $cmd = (DIRECTORY_SEPARATOR === '\\' ? 'cmd.exe /C echo foo >nul' : 'echo foo >/dev/null');
+        $process = new Process($cmd);
+        $process->start($this->createLoop());
+
+        $this->assertInstanceOf('React\Stream\WritableStreamInterface', $process->getStdin());
+    }
+
+    public function testGetStdinEmptyPipes()
+    {
+        $cmd = (DIRECTORY_SEPARATOR === '\\' ? 'cmd.exe /C echo foo >nul' : 'echo foo >/dev/null');
+        $process = new Process($cmd, null, null, array());
+        $process->start($this->createLoop());
+
+        $this->assertNull($process->getStdin());
+    }
+
+    public function testGetStdinNotStarted()
+    {
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $this->markTestSkipped('Process pipes not supported on Windows');
+        }
+
+        $cmd = (DIRECTORY_SEPARATOR === '\\' ? 'cmd.exe /C echo foo >nul' : 'echo foo >/dev/null');
+        $process = new Process($cmd);
+
+        $this->assertNull($process->getStdin());
+    }
+
+    public function testGetStdout()
+    {
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $this->markTestSkipped('Process pipes not supported on Windows');
+        }
+
+        $cmd = (DIRECTORY_SEPARATOR === '\\' ? 'cmd.exe /C echo foo >nul' : 'echo foo >/dev/null');
+        $process = new Process($cmd);
+        $process->start($this->createLoop());
+
+        $this->assertInstanceOf('React\Stream\ReadableStreamInterface', $process->getStdout());
+    }
+
+    public function testGetStdoutEmptyPipes()
+    {
+        $cmd = (DIRECTORY_SEPARATOR === '\\' ? 'cmd.exe /C echo foo >nul' : 'echo foo >/dev/null');
+        $process = new Process($cmd, null, null, array());
+        $process->start($this->createLoop());
+
+        $this->assertNull($process->getStdout());
+    }
+
+    public function testGetStdoutNotStarted()
+    {
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $this->markTestSkipped('Process pipes not supported on Windows');
+        }
+
+        $cmd = (DIRECTORY_SEPARATOR === '\\' ? 'cmd.exe /C echo foo >nul' : 'echo foo >/dev/null');
+        $process = new Process($cmd);
+
+        $this->assertNull($process->getStdout());
+    }
+
+    public function testGetStderr()
+    {
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $this->markTestSkipped('Process pipes not supported on Windows');
+        }
+
+        $cmd = (DIRECTORY_SEPARATOR === '\\' ? 'cmd.exe /C echo foo >nul' : 'echo foo >/dev/null');
+        $process = new Process($cmd);
+        $process->start($this->createLoop());
+
+        $this->assertInstanceOf('React\Stream\ReadableStreamInterface', $process->getStderr());
+    }
+
+    public function testGetStderrEmptyPipes()
+    {
+        $cmd = (DIRECTORY_SEPARATOR === '\\' ? 'cmd.exe /C echo foo >nul' : 'echo foo >/dev/null');
+        $process = new Process($cmd, null, null, array());
+        $process->start($this->createLoop());
+
+        $this->assertNull($process->getStderr());
+    }
+
+    public function testGetSterrNotStarted()
+    {
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $this->markTestSkipped('Process pipes not supported on Windows');
+        }
+
+        $cmd = (DIRECTORY_SEPARATOR === '\\' ? 'cmd.exe /C echo foo >nul' : 'echo foo >/dev/null');
+        $process = new Process($cmd);
+
+        $this->assertNull($process->getStderr());
+    }
+
+    public function testGetPipes()
+    {
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $this->markTestSkipped('Process pipes not supported on Windows');
+        }
+
+        $cmd = (DIRECTORY_SEPARATOR === '\\' ? 'cmd.exe /C echo foo >nul' : 'echo foo >/dev/null');
+        $process = new Process($cmd);
+        $process->start($this->createLoop());
+
+        $pipes = $process->getPipes();
+        $this->assertCount(3, $pipes);
+
+        $this->assertInstanceOf('React\Stream\WritableStreamInterface', $pipes[0]);
+        $this->assertInstanceOf('React\Stream\ReadableStreamInterface', $pipes[1]);
+        $this->assertInstanceOf('React\Stream\ReadableStreamInterface', $pipes[2]);
+    }
+
+    public function testGetPipesEmptyPipes()
+    {
+        $cmd = (DIRECTORY_SEPARATOR === '\\' ? 'cmd.exe /C echo foo >nul' : 'echo foo >/dev/null');
+        $process = new Process($cmd, null, null, array());
+        $process->start($this->createLoop());
+
+        $this->assertSame(array(), $process->getPipes());
+    }
+
+    public function testGetPipesNotStarted()
+    {
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $this->markTestSkipped('Process pipes not supported on Windows');
+        }
+
+        $cmd = (DIRECTORY_SEPARATOR === '\\' ? 'cmd.exe /C echo foo >nul' : 'echo foo >/dev/null');
+        $process = new Process($cmd);
+
+        $this->assertSame(array(), $process->getPipes());
     }
 
     public function testPipesWillBeUnsetBeforeStarting()
