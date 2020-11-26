@@ -79,7 +79,7 @@ class Process extends EventEmitter
      * - 1: STDOUT (`ReadableStreamInterface`)
      * - 2: STDERR (`ReadableStreamInterface`)
      *
-     * @var ReadableStreamInterface|WritableStreamInterface
+     * @var array<ReadableStreamInterface|WritableStreamInterface>
      */
     public $pipes = array();
 
