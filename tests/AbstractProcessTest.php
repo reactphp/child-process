@@ -430,10 +430,6 @@ abstract class AbstractProcessTest extends TestCase
             $this->markTestSkipped('Process pipes not supported on Windows');
         }
 
-        if (getenv('TRAVIS')) {
-            $this->markTestSkipped('Cannot execute PHP processes with custom environments on Travis CI.');
-        }
-
         $cmd = $this->getPhpBinary() . ' -r ' . escapeshellarg('echo getenv("foo"), PHP_EOL;');
 
         $loop = $this->createLoop();
