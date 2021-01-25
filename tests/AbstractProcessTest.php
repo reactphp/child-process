@@ -84,10 +84,6 @@ abstract class AbstractProcessTest extends TestCase
         $this->assertInstanceOf('React\Stream\WritableStreamInterface', $process->pipes[3]);
     }
 
-    /**
-     * @expectedException RuntimeException
-     * @expectedExceptionMessage No such file or directory
-     */
     public function testStartWithInvalidFileDescriptorPathWillThrow()
     {
         $fds = array(
@@ -95,6 +91,8 @@ abstract class AbstractProcessTest extends TestCase
         );
 
         $process = new Process('exit 0', null, null, $fds);
+
+        $this->setExpectedException('RuntimeException', 'No such file or directory');
         $process->start($this->createLoop());
     }
 
@@ -130,7 +128,7 @@ abstract class AbstractProcessTest extends TestCase
             // clear dummy files handles to make some room again (avoid fatal errors for autoloader)
             $fds = array();
 
-            $this->assertContains('Too many open files', $e->getMessage());
+            $this->assertContainsString('Too many open files', $e->getMessage());
         }
     }
 
@@ -631,9 +629,6 @@ abstract class AbstractProcessTest extends TestCase
         $this->assertNotEmpty($output);
     }
 
-    /**
-     * @expectedException RuntimeException
-     */
     public function testStartAlreadyRunningProcess()
     {
         if (DIRECTORY_SEPARATOR === '\\') {
@@ -645,6 +640,8 @@ abstract class AbstractProcessTest extends TestCase
         //var_dump($process);
 
         $process->start($this->createLoop());
+
+        $this->setExpectedException('RuntimeException');
         $process->start($this->createLoop());
     }
 
@@ -872,5 +869,33 @@ abstract class AbstractProcessTest extends TestCase
         $runtime = new Runtime();
 
         return $runtime->getBinary();
+    }
+
+    public function setExpectedException($exception, $exceptionMessage = '', $exceptionCode = null)
+    {
+        if (method_exists($this, 'expectException')) {
+            // PHPUnit 5.2+
+            $this->expectException($exception);
+            if ($exceptionMessage !== '') {
+                $this->expectExceptionMessage($exceptionMessage);
+            }
+            if ($exceptionCode !== null) {
+                $this->expectExceptionCode($exceptionCode);
+            }
+        } else {
+            // legacy PHPUnit 4 - PHPUnit 5.1
+            parent::setExpectedException($exception, $exceptionMessage, $exceptionCode);
+        }
+    }
+
+    public function assertContainsString($needle, $haystack)
+    {
+        if (method_exists($this, 'assertStringContainsString')) {
+            // PHPUnit 7.5+
+            $this->assertStringContainsString($needle, $haystack);
+        } else {
+            // legacy PHPUnit 4 - PHPUnit 7.5
+            $this->assertContains($needle, $haystack);
+        }
     }
 }
