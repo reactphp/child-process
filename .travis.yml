@@ -1,25 +1,21 @@
 language: php
 
-php:
-# - 5.3 # requires old distro, see below
-  - 5.4
-  - 5.5
-  - 5.6
-  - 7.0
-  - 7.1
-  - 7.2
-  - 7.3
-  - 7.4  
-# - hhvm # requires legacy phpunit & ignore errors, see below
-
 # lock distro so new future defaults will not break the build
 dist: trusty
 
-matrix:
+jobs:
   include:
     - php: 5.3
       dist: precise
-    - php: hhvm
+    - php: 5.4
+    - php: 5.5
+    - php: 5.6
+    - php: 7.0
+    - php: 7.1
+    - php: 7.2
+    - php: 7.3
+    - php: 7.4
+    - php: hhvm-3.18
       install: composer require phpunit/phpunit:^5 --dev --no-interaction
     - name: "Windows"
       os: windows
@@ -29,14 +25,13 @@ matrix:
         - choco install composer
         - export PATH="$(powershell -Command '("Process", "Machine" | % { [Environment]::GetEnvironmentVariable("PATH", $_) -Split ";" -Replace "\\$", "" } | Select -Unique | % { cygpath $_ }) -Join ":"')"
   allow_failures:
-    - php: hhvm
+    - php: hhvm-3.18
     - os: windows
 
-sudo: false
-
 install:
-  - composer install --no-interaction
+  - composer install
 
 script:
-  - vendor/bin/phpunit --coverage-text
+  - if [[ "$TRAVIS_PHP_VERSION" > "7.2" ]]; then vendor/bin/phpunit --coverage-text; fi
+  - if [[ "$TRAVIS_PHP_VERSION" < "7.3" ]]; then vendor/bin/phpunit --coverage-text -c phpunit.xml.legacy; fi
   - php examples/13-benchmark-throughput.php
