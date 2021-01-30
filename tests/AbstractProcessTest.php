@@ -109,7 +109,7 @@ abstract class AbstractProcessTest extends TestCase
             $this->markTestSkipped('Not supported on legacy HHVM');
         }
 
-        $ulimit = exec('ulimit -n 2>&1');
+        $ulimit = (int) exec('ulimit -n 2>&1');
         if ($ulimit < 1) {
             $this->markTestSkipped('Unable to determine limit of open files (ulimit not available?)');
         }
@@ -117,7 +117,7 @@ abstract class AbstractProcessTest extends TestCase
         $loop = $this->createLoop();
 
         // create 70% (usually ~700) dummy file handles in this parent dummy
-        $limit = (int)($ulimit * 0.7);
+        $limit = (int) ($ulimit * 0.7);
         $fds = array();
         for ($i = 0; $i < $limit; ++$i) {
             $fds[$i] = fopen('/dev/null', 'r');
