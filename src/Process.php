@@ -231,10 +231,13 @@ class Process extends EventEmitter
         }
 
         foreach ($pipes as $n => $fd) {
+            // use open mode from stream meta data or fall back to pipe open mode for legacy HHVM
             $meta = \stream_get_meta_data($fd);
-            if ($meta['mode'] === 'r+') {
+            $mode = $meta['mode'] === '' ? ($this->fds[$n][1] === 'r' ? 'w' : 'r') : $meta['mode'];
+
+            if ($mode === 'r+') {
                 $stream = new DuplexResourceStream($fd, $loop);
-            } elseif ($meta['mode'] === 'w') {
+            } elseif ($mode === 'w') {
                 $stream = new WritableResourceStream($fd, $loop);
             } else {
                 $stream = new ReadableResourceStream($fd, $loop);

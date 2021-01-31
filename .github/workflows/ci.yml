@@ -46,6 +46,6 @@ jobs:
       - uses: azjezz/setup-hhvm@v1
         with:
           version: lts-3.30
-      - run: hhvm $(which composer) require phpunit/phpunit:^5 --dev # requires legacy phpunit
+      - run: hhvm $(which composer) install
       - run: hhvm vendor/bin/phpunit
       - run: hhvm examples/13-benchmark-throughput.php
