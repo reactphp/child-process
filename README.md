@@ -1,6 +1,6 @@
 # Child Process
 
-[![Build Status](https://travis-ci.org/reactphp/child-process.svg?branch=master)](https://travis-ci.org/reactphp/child-process)
+[![CI status](https://github.com/reactphp/child-process/workflows/CI/badge.svg)](https://github.com/reactphp/child-process/actions)
 
 Event-driven library for executing child processes with
 [ReactPHP](https://reactphp.org/).

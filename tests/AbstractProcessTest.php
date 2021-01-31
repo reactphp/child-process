@@ -86,6 +86,10 @@ abstract class AbstractProcessTest extends TestCase
 
     public function testStartWithInvalidFileDescriptorPathWillThrow()
     {
+        if (defined('HHVM_VERSION')) {
+            $this->markTestSkipped('Not supported on legacy HHVM');
+        }
+
         $fds = array(
             4 => array('file', '/dev/does-not-exist', 'r')
         );
@@ -100,6 +104,9 @@ abstract class AbstractProcessTest extends TestCase
     {
         if (PHP_VERSION_ID < 70000) {
             $this->markTestSkipped('PHP 7+ only, causes memory overflow on legacy PHP 5');
+        }
+        if (defined('HHVM_VERSION')) {
+            $this->markTestSkipped('Not supported on legacy HHVM');
         }
 
         $ulimit = exec('ulimit -n 2>&1');
@@ -273,6 +280,10 @@ abstract class AbstractProcessTest extends TestCase
 
     public function testReceivesProcessOutputFromStdoutRedirectedToSocketProcess()
     {
+        if (defined('HHVM_VERSION')) {
+            $this->markTestSkipped('Not supported on legacy HHVM');
+        }
+
         // create TCP/IP server on random port and wait for client connection
         $server = stream_socket_server('tcp://127.0.0.1:0');
 
@@ -428,10 +439,6 @@ abstract class AbstractProcessTest extends TestCase
     {
         if (DIRECTORY_SEPARATOR === '\\') {
             $this->markTestSkipped('Process pipes not supported on Windows');
-        }
-
-        if (getenv('TRAVIS')) {
-            $this->markTestSkipped('Cannot execute PHP processes with custom environments on Travis CI.');
         }
 
         $cmd = $this->getPhpBinary() . ' -r ' . escapeshellarg('echo getenv("foo"), PHP_EOL;');
