@@ -8,6 +8,8 @@ use React\Stream\ReadableResourceStream;
 use React\Stream\ReadableStreamInterface;
 use React\Stream\WritableResourceStream;
 use React\Stream\WritableStreamInterface;
+use React\Stream\DuplexResourceStream;
+use React\Stream\DuplexStreamInterface;
 
 /**
  * Process component.
@@ -56,17 +58,17 @@ use React\Stream\WritableStreamInterface;
 class Process extends EventEmitter
 {
     /**
-     * @var WritableStreamInterface|null|ReadableStreamInterface
+     * @var WritableStreamInterface|null|DuplexStreamInterface|ReadableStreamInterface
      */
     public $stdin;
 
     /**
-     * @var ReadableStreamInterface|null|WritableStreamInterface
+     * @var ReadableStreamInterface|null|DuplexStreamInterface|WritableStreamInterface
      */
     public $stdout;
 
     /**
-     * @var ReadableStreamInterface|null|WritableStreamInterface
+     * @var ReadableStreamInterface|null|DuplexStreamInterface|WritableStreamInterface
      */
     public $stderr;
 
@@ -79,7 +81,7 @@ class Process extends EventEmitter
      * - 1: STDOUT (`ReadableStreamInterface`)
      * - 2: STDERR (`ReadableStreamInterface`)
      *
-     * @var array<ReadableStreamInterface|WritableStreamInterface>
+     * @var array<ReadableStreamInterface|WritableStreamInterface|DuplexStreamInterface>
      */
     public $pipes = array();
 
@@ -229,7 +231,10 @@ class Process extends EventEmitter
         }
 
         foreach ($pipes as $n => $fd) {
-            if (\strpos($this->fds[$n][1], 'w') === false) {
+            $meta = \stream_get_meta_data($fd);
+            if ($meta['mode'] === 'r+') {
+                $stream = new DuplexResourceStream($fd, $loop);
+            } elseif ($meta['mode'] === 'w') {
                 $stream = new WritableResourceStream($fd, $loop);
             } else {
                 $stream = new ReadableResourceStream($fd, $loop);

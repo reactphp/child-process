@@ -49,6 +49,33 @@ abstract class AbstractProcessTest extends TestCase
         $this->assertSame($process->stderr, $process->pipes[2]);
     }
 
+    /**
+     * @depends testStartWillAssignPipes
+     * @requires PHP 8
+     */
+    public function testStartWithSocketDescriptorsWillAssignDuplexPipes()
+    {
+        $process = new Process(
+            (DIRECTORY_SEPARATOR === '\\' ? 'cmd /c ' : '') . 'echo foo',
+            null,
+            null,
+            array(
+                array('socket'),
+                array('socket'),
+                array('socket')
+            )
+        );
+        $process->start($this->createLoop());
+
+        $this->assertInstanceOf('React\Stream\DuplexStreamInterface', $process->stdin);
+        $this->assertInstanceOf('React\Stream\DuplexStreamInterface', $process->stdout);
+        $this->assertInstanceOf('React\Stream\DuplexStreamInterface', $process->stderr);
+        $this->assertCount(3, $process->pipes);
+        $this->assertSame($process->stdin, $process->pipes[0]);
+        $this->assertSame($process->stdout, $process->pipes[1]);
+        $this->assertSame($process->stderr, $process->pipes[2]);
+    }
+
     public function testStartWithoutAnyPipesWillNotAssignPipes()
     {
         if (DIRECTORY_SEPARATOR === '\\') {
@@ -205,6 +232,35 @@ abstract class AbstractProcessTest extends TestCase
         $process->stdout->on('data', function ($data) use (&$buffer) {
             $buffer .= $data;
         });
+
+        $loop->run();
+
+        $this->assertEquals('test', rtrim($buffer));
+    }
+
+    /**
+     * @requires PHP 8
+     */
+    public function testReceivesProcessStdoutFromEchoViaSocketDescriptors()
+    {
+        $loop = $this->createLoop();
+        $process = new Process(
+            $this->getPhpBinary() . ' -r ' . escapeshellarg('echo \'test\';'),
+            null,
+            null,
+            array(
+                array('socket'),
+                array('socket'),
+                array('socket')
+            )
+        );
+        $process->start($loop);
+
+        $buffer = '';
+        $process->stdout->on('data', function ($data) use (&$buffer) {
+            $buffer .= $data;
+        });
+        $process->stderr->on('data', 'var_dump');
 
         $loop->run();
 
