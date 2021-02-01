@@ -1,5 +1,7 @@
 <?php
 
+// see also 05-stdio-sockets.php
+
 use React\EventLoop\Factory;
 use React\ChildProcess\Process;
 

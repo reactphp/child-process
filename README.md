@@ -422,9 +422,9 @@ cases. You may then enable this  explicitly as given above.
 
 Due to platform constraints, this library provides only limited support for
 spawning child processes on Windows. In particular, PHP does not allow accessing
-standard I/O pipes without blocking. As such, this project will not allow
-constructing a child process with the default process pipes and will instead
-throw a `LogicException` on Windows by default:
+standard I/O pipes on Windows without blocking. As such, this project will not
+allow constructing a child process with the default process pipes and will
+instead throw a `LogicException` on Windows by default:
 
 ```php
 // throws LogicException on Windows
@@ -434,6 +434,30 @@ $process->start($loop);
 
 There are a number of alternatives and workarounds as detailed below if you want
 to run a child process on Windows, each with its own set of pros and cons:
+
+*   As of PHP 8, you can start the child process with `socket` pair descriptors
+    in place of normal standard I/O pipes like this:
+
+    ```php
+    $process = new Process(
+        'ping example.com',
+        null,
+        null,
+        [
+            ['socket'],
+            ['socket'],
+            ['socket']
+        ]
+    );
+    $process->start($loop);
+
+    $process->stdout->on('data', function ($chunk) {
+        echo $chunk;
+    });
+    ```
+
+    These `socket` pairs support non-blocking process I/O on any platform,
+    including Windows. However, not all programs accept stdio sockets.
 
 *   This package does work on
     [`Windows Subsystem for Linux`](https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux)
@@ -573,7 +597,7 @@ $ composer require react/child-process:^0.6.1
 See also the [CHANGELOG](CHANGELOG.md) for details about version upgrades.
 
 This project aims to run on any platform and thus does not require any PHP
-extensions and supports running on legacy PHP 5.3 through current PHP 7+ and HHVM.
+extensions and supports running on legacy PHP 5.3 through current PHP 8+ and HHVM.
 It's *highly recommended to use PHP 7+* for this project.
 
 See above note for limited [Windows Compatibility](#windows-compatibility).
