@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.6.2 (2021-02-05)
+
+*   Feature: Support PHP 8 and add non-blocking I/O support on Windows with PHP 8.
+    (#85 by @clue)
+
+*   Minor documentation improvements.
+    (#78 by @WyriHaximus and #80 by @gdejong)
+
+*   Improve test suite and add `.gitattributes` to exclude dev files from exports.
+    Run tests on PHPUnit 9, switch to GitHub actions and clean up test suite.
+    (#75 by @reedy, #81 by @gdejong, #82 by @SimonFrings and #84 by @clue)
+
 ## 0.6.1 (2019-02-15)
 
 *   Feature / Fix: Improve error reporting when spawning child process fails.
