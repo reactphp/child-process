@@ -3,6 +3,7 @@
 namespace React\ChildProcess;
 
 use Evenement\EventEmitter;
+use React\EventLoop\Loop;
 use React\EventLoop\LoopInterface;
 use React\Stream\ReadableResourceStream;
 use React\Stream\ReadableStreamInterface;
@@ -27,7 +28,7 @@ use React\Stream\DuplexStreamInterface;
  *
  *     ```php
  *     $process = new Process('sleep 10');
- *     $process->start($loop);
+ *     $process->start();
  *
  *     $process->on('exit', function ($code, $term) {
  *         if ($term === null) {
@@ -153,16 +154,23 @@ class Process extends EventEmitter
      * After the process is started, the standard I/O streams will be constructed
      * and available via public properties.
      *
-     * @param LoopInterface $loop        Loop interface for stream construction
-     * @param float         $interval    Interval to periodically monitor process state (seconds)
+     * This method takes an optional `LoopInterface|null $loop` parameter that can be used to
+     * pass the event loop instance to use for this process. You can use a `null` value
+     * here in order to use the [default loop](https://github.com/reactphp/event-loop#loop).
+     * This value SHOULD NOT be given unless you're sure you want to explicitly use a
+     * given event loop instance.
+     *
+     * @param ?LoopInterface $loop        Loop interface for stream construction
+     * @param float          $interval    Interval to periodically monitor process state (seconds)
      * @throws \RuntimeException If the process is already running or fails to start
      */
-    public function start(LoopInterface $loop, $interval = 0.1)
+    public function start(LoopInterface $loop = null, $interval = 0.1)
     {
         if ($this->isRunning()) {
             throw new \RuntimeException('Process is already running');
         }
 
+        $loop = $loop ?: Loop::get();
         $cmd = $this->cmd;
         $fdSpec = $this->fds;
         $sigchild = null;

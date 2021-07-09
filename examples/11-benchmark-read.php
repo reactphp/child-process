@@ -4,7 +4,6 @@
 // $ php examples/11-benchmark.php echo test
 // $ php examples/11-benchmark.php dd if=/dev/zero bs=1M count=1000
 
-use React\EventLoop\Factory;
 use React\ChildProcess\Process;
 
 require __DIR__ . '/../vendor/autoload.php';
@@ -15,9 +14,7 @@ if (DIRECTORY_SEPARATOR === '\\') {
 
 $cmd = isset($argv[1]) ? implode(' ', array_slice($argv, 1)) : 'dd if=/dev/zero bs=1M count=1000';
 
-$loop = Factory::create();
-
-$info = new React\Stream\WritableResourceStream(STDERR, $loop);
+$info = new React\Stream\WritableResourceStream(STDERR);
 $info->write('Counts number of chunks/bytes received from process STDOUT' . PHP_EOL);
 $info->write('Command: ' . $cmd . PHP_EOL);
 if (extension_loaded('xdebug')) {
@@ -25,7 +22,7 @@ if (extension_loaded('xdebug')) {
 }
 
 $process = new Process($cmd);
-$process->start($loop);
+$process->start();
 $start = microtime(true);
 
 $chunks = 0;
@@ -47,5 +44,3 @@ $process->on('exit', function () use (&$chunks, &$bytes, $start, $info) {
 $process->stdout->on('error', array($info, 'write'));
 $process->stderr->on('data', 'printf');
 $process->stdout->on('error', 'printf');
-
-$loop->run();
