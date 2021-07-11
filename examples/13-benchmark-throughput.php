@@ -1,6 +1,5 @@
 <?php
 
-use React\EventLoop\Factory;
 use React\ChildProcess\Process;
 
 require __DIR__ . '/../vendor/autoload.php';
@@ -9,16 +8,14 @@ if (DIRECTORY_SEPARATOR === '\\') {
     exit('Process pipes not supported on Windows' . PHP_EOL);
 }
 
-$loop = Factory::create();
-
-$info = new React\Stream\WritableResourceStream(STDERR, $loop);
+$info = new React\Stream\WritableResourceStream(STDERR);
 $info->write('Pipes data through process STDIN and reads STDOUT again' . PHP_EOL);
 if (extension_loaded('xdebug')) {
     $info->write('NOTICE: The "xdebug" extension is loaded, this has a major impact on performance.' . PHP_EOL);
 }
 
 $process = new Process('cat');
-$process->start($loop);
+$process->start();
 $start = microtime(true);
 
 $chunks = 0;
@@ -58,5 +55,3 @@ $process->on('exit', function () use (&$chunks, &$bytes, $start, $info) {
 $process->stdout->on('error', 'printf');
 $process->stderr->on('data', 'printf');
 $process->stdout->on('error', 'printf');
-
-$loop->run();

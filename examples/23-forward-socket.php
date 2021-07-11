@@ -2,14 +2,11 @@
 
 // see also 05-stdio-sockets.php
 
-use React\EventLoop\Factory;
 use React\ChildProcess\Process;
 
 require __DIR__ . '/../vendor/autoload.php';
 
-$loop = Factory::create();
-
-$server = new React\Socket\Server('127.0.0.1:0', $loop);
+$server = new React\Socket\Server('127.0.0.1:0');
 $server->on('connection', function (React\Socket\ConnectionInterface $connection) {
     $connection->on('data', function ($chunk) {
         // escape control codes (useful in case encoding or binary data is not working as expected)
@@ -34,11 +31,9 @@ $process = new Process(
     null,
     array()
 );
-$process->start($loop);
+$process->start();
 
 $process->on('exit', function ($code) use ($server) {
     $server->close();
     echo PHP_EOL . 'Process closed ' . $code . PHP_EOL;
 });
-
-$loop->run();

@@ -50,6 +50,21 @@ abstract class AbstractProcessTest extends TestCase
     }
 
     /**
+     * @depends testPipesWillBeUnsetBeforeStarting
+     */
+    public function testStartWithoutLoopAssignsLoopAutomatically()
+    {
+        $process = new Process('echo foo');
+        $process->start();
+
+        $ref = new \ReflectionProperty($process->stdin, 'loop');
+        $ref->setAccessible(true);
+        $loop = $ref->getValue($process->stdin);
+
+        $this->assertInstanceOf('React\EventLoop\LoopInterface', $loop);
+    }
+
+    /**
      * @depends testStartWillAssignPipes
      * @requires PHP 8
      */
