@@ -1,4 +1,4 @@
-# Child Process
+# ChildProcess
 
 [![CI status](https://github.com/reactphp/child-process/workflows/CI/badge.svg)](https://github.com/reactphp/child-process/actions)
 
@@ -587,7 +587,7 @@ The recommended way to install this library is [through Composer](https://getcom
 This will install the latest supported version:
 
 ```bash
-$ composer require react/child-process:^0.6.2
+$ composer require react/child-process:^0.6.3
 ```
 
 See also the [CHANGELOG](CHANGELOG.md) for details about version upgrades.
