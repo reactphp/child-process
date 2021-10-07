@@ -156,9 +156,28 @@ abstract class AbstractProcessTest extends TestCase
             $this->markTestSkipped('Unable to determine limit of open files (ulimit not available?)');
         }
 
+        // create 70% (usually ~700) dummy file handles in this parent
+        $limit = (int) ($ulimit * 0.7);
+
+        $memory = ini_get('memory_limit');
+        if ($memory === '-1') {
+            $memory = PHP_INT_MAX;
+        } elseif (preg_match('/^\d+G$/i', $memory)) {
+            $memory = ((int) $memory) * 1024 * 1024 * 1024;
+        } elseif (preg_match('/^\d+M$/i', $memory)) {
+            $memory = ((int) $memory) * 1024 * 1024;
+        } elseif (preg_match('/^\d+K$/i', $memory)) {
+            $memory = ((int) $memory) * 1024;
+        }
+
+        // each file descriptor takes ~600 bytes of memory, so skip test if this would exceed memory_limit
+        if ($limit * 600 > $memory) {
+            $this->markTestSkipped('Test requires ~' . round($limit * 600 / 1024 / 1024) . '/' . round($memory / 1024 / 1024) . ' MiB memory with ' . $ulimit . ' file descriptors');
+        }
+
         $loop = $this->createLoop();
 
-        // create 70% (usually ~700) dummy file handles in this parent dummy
+        // create ~700 dummy file handles in this parent
         $limit = (int) ($ulimit * 0.7);
         $fds = array();
         for ($i = 0; $i < $limit; ++$i) {
