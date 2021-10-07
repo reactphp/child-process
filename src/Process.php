@@ -438,6 +438,10 @@ class Process extends EventEmitter
             return self::$sigchild;
         }
 
+        if (!\function_exists('phpinfo')) {
+            return self::$sigchild = false; // @codeCoverageIgnore
+        }
+
         \ob_start();
         \phpinfo(INFO_GENERAL);
 
