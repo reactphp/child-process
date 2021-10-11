@@ -156,9 +156,28 @@ abstract class AbstractProcessTest extends TestCase
             $this->markTestSkipped('Unable to determine limit of open files (ulimit not available?)');
         }
 
+        // create 70% (usually ~700) dummy file handles in this parent
+        $limit = (int) ($ulimit * 0.7);
+
+        $memory = ini_get('memory_limit');
+        if ($memory === '-1') {
+            $memory = PHP_INT_MAX;
+        } elseif (preg_match('/^\d+G$/i', $memory)) {
+            $memory = ((int) $memory) * 1024 * 1024 * 1024;
+        } elseif (preg_match('/^\d+M$/i', $memory)) {
+            $memory = ((int) $memory) * 1024 * 1024;
+        } elseif (preg_match('/^\d+K$/i', $memory)) {
+            $memory = ((int) $memory) * 1024;
+        }
+
+        // each file descriptor takes ~600 bytes of memory, so skip test if this would exceed memory_limit
+        if ($limit * 600 > $memory) {
+            $this->markTestSkipped('Test requires ~' . round($limit * 600 / 1024 / 1024) . '/' . round($memory / 1024 / 1024) . ' MiB memory with ' . $ulimit . ' file descriptors');
+        }
+
         $loop = $this->createLoop();
 
-        // create 70% (usually ~700) dummy file handles in this parent dummy
+        // create ~700 dummy file handles in this parent
         $limit = (int) ($ulimit * 0.7);
         $fds = array();
         for ($i = 0; $i < $limit; ++$i) {
@@ -579,6 +598,31 @@ abstract class AbstractProcessTest extends TestCase
         $this->assertLessThan(0.1, $time);
     }
 
+    /**
+     * @requires PHP 8
+     */
+    public function testProcessWithSocketIoWillExitFasterThanExitInterval()
+    {
+        $loop = $this->createLoop();
+        $process = new Process(
+            DIRECTORY_SEPARATOR === '\\' ? 'cmd /c echo hi' : 'echo hi',
+            null,
+            null,
+            array(
+                array('socket'),
+                array('socket'),
+                array('socket')
+            )
+        );
+        $process->start($loop, 2);
+
+        $time = microtime(true);
+        $loop->run();
+        $time = microtime(true) - $time;
+
+        $this->assertLessThan(0.1, $time);
+    }
+
     public function testDetectsClosingStdoutWithoutHavingToWaitForExit()
     {
         if (DIRECTORY_SEPARATOR === '\\') {
@@ -589,6 +633,39 @@ abstract class AbstractProcessTest extends TestCase
 
         $loop = $this->createLoop();
         $process = new Process($cmd);
+        $process->start($loop);
+
+        $closed = false;
+        $process->stdout->on('close', function () use (&$closed, $loop) {
+            $closed = true;
+            $loop->stop();
+        });
+
+        // run loop for maximum of 0.5s only
+        $loop->addTimer(0.5, function () use ($loop) {
+            $loop->stop();
+        });
+        $loop->run();
+
+        $this->assertTrue($closed);
+    }
+
+    /**
+     * @requires PHP 8
+     */
+    public function testDetectsClosingStdoutSocketWithoutHavingToWaitForExit()
+    {
+        $loop = $this->createLoop();
+        $process = new Process(
+            (DIRECTORY_SEPARATOR === '\\' ? '' : 'exec ') . $this->getPhpBinary() . ' -r ' . escapeshellarg('fclose(STDOUT); sleep(1);'),
+            null,
+            null,
+            array(
+                array('socket'),
+                array('socket'),
+                array('socket')
+            )
+        );
         $process->start($loop);
 
         $closed = false;
@@ -642,6 +719,48 @@ abstract class AbstractProcessTest extends TestCase
         $this->assertTrue($process->isRunning());
     }
 
+    /**
+     * @requires PHP 8
+     */
+    public function testKeepsRunningEvenWhenAllStdioSocketsHaveBeenClosed()
+    {
+        $loop = $this->createLoop();
+        $process = new Process(
+            (DIRECTORY_SEPARATOR === '\\' ? '' : 'exec ') . $this->getPhpBinary() . ' -r ' . escapeshellarg('fclose(STDIN);fclose(STDOUT);fclose(STDERR);sleep(1);'),
+            null,
+            null,
+            array(
+                array('socket'),
+                array('socket'),
+                array('socket')
+            )
+        );
+        $process->start($loop);
+
+        $closed = 0;
+        $process->stdout->on('close', function () use (&$closed, $loop) {
+            ++$closed;
+            if ($closed === 2) {
+                $loop->stop();
+            }
+        });
+        $process->stderr->on('close', function () use (&$closed, $loop) {
+            ++$closed;
+            if ($closed === 2) {
+                $loop->stop();
+            }
+        });
+
+        // run loop for maximum 0.5s only
+        $loop->addTimer(0.5, function () use ($loop) {
+            $loop->stop();
+        });
+        $loop->run();
+
+        $this->assertEquals(2, $closed);
+        $this->assertTrue($process->isRunning());
+    }
+
     public function testDetectsClosingProcessEvenWhenAllStdioPipesHaveBeenClosed()
     {
         if (DIRECTORY_SEPARATOR === '\\') {
@@ -662,16 +781,42 @@ abstract class AbstractProcessTest extends TestCase
         $this->assertSame(0, $process->getExitCode());
     }
 
+    /**
+     * @requires PHP 8
+     */
+    public function testDetectsClosingProcessEvenWhenAllStdioSocketsHaveBeenClosed()
+    {
+        $loop = $this->createLoop();
+        $process = new Process(
+            (DIRECTORY_SEPARATOR === '\\' ? '' : 'exec ') . $this->getPhpBinary() . ' -r ' . escapeshellarg('fclose(STDIN);fclose(STDOUT);fclose(STDERR);usleep(10000);'),
+            null,
+            null,
+            array(
+                array('socket'),
+                array('socket'),
+                array('socket')
+            )
+        );
+        $process->start($loop, 0.001);
+
+        $time = microtime(true);
+        $loop->run();
+        $time = microtime(true) - $time;
+
+        $this->assertLessThan(0.5, $time);
+        $this->assertSame(0, $process->getExitCode());
+    }
+
     public function testDetectsClosingProcessEvenWhenStartedWithoutPipes()
     {
         $loop = $this->createLoop();
 
-        if (DIRECTORY_SEPARATOR === '\\') {
-            $process = new Process('cmd /c exit 0', null, null, array());
-        } else {
-            $process = new Process('exit 0', null, null, array());
-        }
-
+        $process = new Process(
+            (DIRECTORY_SEPARATOR === '\\' ? 'cmd /c ' : '') . 'exit 0',
+            null,
+            null,
+            array()
+        );
         $process->start($loop, 0.001);
 
         $time = microtime(true);

@@ -245,6 +245,8 @@ class Process extends EventEmitter
 
             if ($mode === 'r+') {
                 $stream = new DuplexResourceStream($fd, $loop);
+                $stream->on('close', $streamCloseHandler);
+                $closeCount++;
             } elseif ($mode === 'w') {
                 $stream = new WritableResourceStream($fd, $loop);
             } else {
