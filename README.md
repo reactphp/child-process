@@ -1,6 +1,7 @@
 # ChildProcess
 
 [![CI status](https://github.com/reactphp/child-process/workflows/CI/badge.svg)](https://github.com/reactphp/child-process/actions)
+[![installs on Packagist](https://img.shields.io/packagist/dt/react/child-process?color=blue&label=installs%20on%20Packagist)](https://packagist.org/packages/react/child-process)
 
 Event-driven library for executing child processes with
 [ReactPHP](https://reactphp.org/).
