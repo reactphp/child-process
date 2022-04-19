@@ -126,7 +126,7 @@ abstract class AbstractProcessTest extends TestCase
         $this->assertInstanceOf('React\Stream\WritableStreamInterface', $process->pipes[3]);
     }
 
-    public function testStartWithInvalidFileDescriptorPathWillThrow()
+    public function testStartWithInvalidFileDescriptorPathWillThrowWithoutCallingCustomErrorHandler()
     {
         if (defined('HHVM_VERSION')) {
             $this->markTestSkipped('Not supported on legacy HHVM');
@@ -138,8 +138,22 @@ abstract class AbstractProcessTest extends TestCase
 
         $process = new Process('exit 0', null, null, $fds);
 
+        $error = null;
+        set_error_handler(function ($_, $errstr) use (&$error) {
+            $error = $errstr;
+        });
+
         $this->setExpectedException('RuntimeException', 'No such file or directory');
-        $process->start($this->createLoop());
+
+        try {
+            $process->start($this->createLoop());
+            restore_error_handler();
+        } catch (\Exception $e) {
+            restore_error_handler();
+            $this->assertNull($error);
+
+            throw $e;
+        }
     }
 
     public function testStartWithExcessiveNumberOfFileDescriptorsWillThrow()
