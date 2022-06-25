@@ -643,6 +643,10 @@ abstract class AbstractProcessTest extends TestCase
             $this->markTestSkipped('Process pipes not supported on Windows');
         }
 
+        if (PHP_VERSION_ID === 80107 || PHP_VERSION_ID === 80020) {
+            $this->markTestSkipped('Skip bugged PHP version: https://github.com/php/php-src/issues/8827');
+        }
+
         $cmd = 'exec ' . $this->getPhpBinary() . ' -r ' . escapeshellarg('fclose(STDOUT); sleep(1);');
 
         $loop = $this->createLoop();
@@ -669,6 +673,10 @@ abstract class AbstractProcessTest extends TestCase
      */
     public function testDetectsClosingStdoutSocketWithoutHavingToWaitForExit()
     {
+        if (PHP_VERSION_ID === 80107 || PHP_VERSION_ID === 80020) {
+            $this->markTestSkipped('Skip bugged PHP version: https://github.com/php/php-src/issues/8827');
+        }
+
         $loop = $this->createLoop();
         $process = new Process(
             (DIRECTORY_SEPARATOR === '\\' ? '' : 'exec ') . $this->getPhpBinary() . ' -r ' . escapeshellarg('fclose(STDOUT); sleep(1);'),
@@ -701,6 +709,10 @@ abstract class AbstractProcessTest extends TestCase
     {
         if (DIRECTORY_SEPARATOR === '\\') {
             $this->markTestSkipped('Process pipes not supported on Windows');
+        }
+
+        if (PHP_VERSION_ID === 80107 || PHP_VERSION_ID === 80020) {
+            $this->markTestSkipped('Skip bugged PHP version: https://github.com/php/php-src/issues/8827');
         }
 
         $cmd = 'exec ' . $this->getPhpBinary() . ' -r ' . escapeshellarg('fclose(STDIN);fclose(STDOUT);fclose(STDERR);sleep(1);');
@@ -738,6 +750,10 @@ abstract class AbstractProcessTest extends TestCase
      */
     public function testKeepsRunningEvenWhenAllStdioSocketsHaveBeenClosed()
     {
+        if (PHP_VERSION_ID === 80107 || PHP_VERSION_ID === 80020) {
+            $this->markTestSkipped('Skip bugged PHP version: https://github.com/php/php-src/issues/8827');
+        }
+
         $loop = $this->createLoop();
         $process = new Process(
             (DIRECTORY_SEPARATOR === '\\' ? '' : 'exec ') . $this->getPhpBinary() . ' -r ' . escapeshellarg('fclose(STDIN);fclose(STDOUT);fclose(STDERR);sleep(1);'),
