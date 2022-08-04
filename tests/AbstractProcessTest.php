@@ -643,7 +643,7 @@ abstract class AbstractProcessTest extends TestCase
             $this->markTestSkipped('Process pipes not supported on Windows');
         }
 
-        if (PHP_VERSION_ID === 80107 || PHP_VERSION_ID === 80020) {
+        if (PHP_VERSION_ID === 80108 || PHP_VERSION_ID === 80107 || PHP_VERSION_ID === 80020) {
             $this->markTestSkipped('Skip bugged PHP version: https://github.com/php/php-src/issues/8827');
         }
 
@@ -673,7 +673,7 @@ abstract class AbstractProcessTest extends TestCase
      */
     public function testDetectsClosingStdoutSocketWithoutHavingToWaitForExit()
     {
-        if (PHP_VERSION_ID === 80107 || PHP_VERSION_ID === 80020) {
+        if (PHP_VERSION_ID === 80108 || PHP_VERSION_ID === 80107 || PHP_VERSION_ID === 80020) {
             $this->markTestSkipped('Skip bugged PHP version: https://github.com/php/php-src/issues/8827');
         }
 
@@ -711,7 +711,7 @@ abstract class AbstractProcessTest extends TestCase
             $this->markTestSkipped('Process pipes not supported on Windows');
         }
 
-        if (PHP_VERSION_ID === 80107 || PHP_VERSION_ID === 80020) {
+        if (PHP_VERSION_ID === 80108 || PHP_VERSION_ID === 80107 || PHP_VERSION_ID === 80020) {
             $this->markTestSkipped('Skip bugged PHP version: https://github.com/php/php-src/issues/8827');
         }
 
@@ -750,7 +750,7 @@ abstract class AbstractProcessTest extends TestCase
      */
     public function testKeepsRunningEvenWhenAllStdioSocketsHaveBeenClosed()
     {
-        if (PHP_VERSION_ID === 80107 || PHP_VERSION_ID === 80020) {
+        if (PHP_VERSION_ID === 80108 || PHP_VERSION_ID === 80107 || PHP_VERSION_ID === 80020) {
             $this->markTestSkipped('Skip bugged PHP version: https://github.com/php/php-src/issues/8827');
         }
 
