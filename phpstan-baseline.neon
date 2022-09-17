@@ -1,0 +1,541 @@
+parameters:
+	ignoreErrors:
+		-
+			message: "#^Comparison operation \"\\>\" between int\\<min, \\-1\\> and 0 is always false\\.$#"
+			count: 1
+			path: src/Process.php
+
+		-
+			message: "#^Else branch is unreachable because ternary operator condition is always true\\.$#"
+			count: 4
+			path: src/Process.php
+
+		-
+			message: "#^Method React\\\\ChildProcess\\\\Process\\:\\:__construct\\(\\) has parameter \\$env with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Process.php
+
+		-
+			message: "#^Method React\\\\ChildProcess\\\\Process\\:\\:__construct\\(\\) has parameter \\$fds with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Process.php
+
+		-
+			message: "#^Method React\\\\ChildProcess\\\\Process\\:\\:close\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: src/Process.php
+
+		-
+			message: "#^Method React\\\\ChildProcess\\\\Process\\:\\:closeExitCodePipe\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: src/Process.php
+
+		-
+			message: "#^Method React\\\\ChildProcess\\\\Process\\:\\:getCachedStatus\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Process.php
+
+		-
+			message: "#^Method React\\\\ChildProcess\\\\Process\\:\\:getFreshStatus\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Process.php
+
+		-
+			message: "#^Method React\\\\ChildProcess\\\\Process\\:\\:pollExitCodePipe\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: src/Process.php
+
+		-
+			message: "#^Method React\\\\ChildProcess\\\\Process\\:\\:start\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: src/Process.php
+
+		-
+			message: "#^Method React\\\\ChildProcess\\\\Process\\:\\:updateStatus\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: src/Process.php
+
+		-
+			message: "#^Negated boolean expression is always false\\.$#"
+			count: 1
+			path: src/Process.php
+
+		-
+			message: "#^Parameter \\#1 \\$callback of function set_error_handler expects \\(callable\\(int, string, string, int\\)\\: bool\\)\\|null, Closure\\(mixed, mixed\\)\\: void given\\.$#"
+			count: 1
+			path: src/Process.php
+
+		-
+			message: "#^Parameter \\#1 \\$haystack of function strpos expects string, string\\|false given\\.$#"
+			count: 1
+			path: src/Process.php
+
+		-
+			message: "#^Parameter \\#1 \\$string of function strlen expects string, string\\|false given\\.$#"
+			count: 1
+			path: src/Process.php
+
+		-
+			message: "#^Property React\\\\ChildProcess\\\\Process\\:\\:\\$cmd has no type specified\\.$#"
+			count: 1
+			path: src/Process.php
+
+		-
+			message: "#^Property React\\\\ChildProcess\\\\Process\\:\\:\\$cwd has no type specified\\.$#"
+			count: 1
+			path: src/Process.php
+
+		-
+			message: "#^Property React\\\\ChildProcess\\\\Process\\:\\:\\$enhanceSigchildCompatibility has no type specified\\.$#"
+			count: 1
+			path: src/Process.php
+
+		-
+			message: "#^Property React\\\\ChildProcess\\\\Process\\:\\:\\$env has no type specified\\.$#"
+			count: 1
+			path: src/Process.php
+
+		-
+			message: "#^Property React\\\\ChildProcess\\\\Process\\:\\:\\$exitCode has no type specified\\.$#"
+			count: 1
+			path: src/Process.php
+
+		-
+			message: "#^Property React\\\\ChildProcess\\\\Process\\:\\:\\$fallbackExitCode has no type specified\\.$#"
+			count: 1
+			path: src/Process.php
+
+		-
+			message: "#^Property React\\\\ChildProcess\\\\Process\\:\\:\\$fds has no type specified\\.$#"
+			count: 1
+			path: src/Process.php
+
+		-
+			message: "#^Property React\\\\ChildProcess\\\\Process\\:\\:\\$process has no type specified\\.$#"
+			count: 1
+			path: src/Process.php
+
+		-
+			message: "#^Property React\\\\ChildProcess\\\\Process\\:\\:\\$sigchild has no type specified\\.$#"
+			count: 1
+			path: src/Process.php
+
+		-
+			message: "#^Property React\\\\ChildProcess\\\\Process\\:\\:\\$sigchildPipe has no type specified\\.$#"
+			count: 1
+			path: src/Process.php
+
+		-
+			message: "#^Property React\\\\ChildProcess\\\\Process\\:\\:\\$status has no type specified\\.$#"
+			count: 1
+			path: src/Process.php
+
+		-
+			message: "#^Property React\\\\ChildProcess\\\\Process\\:\\:\\$stopSignal has no type specified\\.$#"
+			count: 1
+			path: src/Process.php
+
+		-
+			message: "#^Property React\\\\ChildProcess\\\\Process\\:\\:\\$termSignal has no type specified\\.$#"
+			count: 1
+			path: src/Process.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between array\\{command\\: string, pid\\: int, running\\: bool, signaled\\: bool, stopped\\: bool, exitcode\\: int, termsig\\: int, stopsig\\: int\\} and false will always evaluate to false\\.$#"
+			count: 1
+			path: src/Process.php
+
+		-
+			message: "#^Anonymous function has an unused use \\$stdErr\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Binary operation \"/\" between int\\|string\\|false and 1024 results in an error\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Call to an undefined static method PHPUnit\\\\Framework\\\\TestCase\\:\\:setExpectedException\\(\\)\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Cannot call method on\\(\\) on React\\\\Stream\\\\ReadableStreamInterface\\|React\\\\Stream\\\\WritableStreamInterface\\|null\\.$#"
+			count: 18
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Caught class PHPUnit_Framework_ExpectationFailedException not found\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:assertContainsString\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:assertContainsString\\(\\) has parameter \\$haystack with no type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:assertContainsString\\(\\) has parameter \\$needle with no type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:assertSoon\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:createLoop\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:setExpectedException\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:setExpectedException\\(\\) has parameter \\$exception with no type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:setExpectedException\\(\\) has parameter \\$exceptionCode with no type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:setExpectedException\\(\\) has parameter \\$exceptionMessage with no type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testCommandWithEnhancedSigchildCompatibilityReceivesExitCode\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testDetectsClosingProcessEvenWhenAllStdioPipesHaveBeenClosed\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testDetectsClosingProcessEvenWhenAllStdioSocketsHaveBeenClosed\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testDetectsClosingProcessEvenWhenStartedWithoutPipes\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testDetectsClosingStdoutSocketWithoutHavingToWaitForExit\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testDetectsClosingStdoutWithoutHavingToWaitForExit\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testGetCommand\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testGetExitCodeWhenRunning\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testGetExitCodeWhenRunning\\(\\) has parameter \\$process with no type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testGetTermSignalWhenRunning\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testGetTermSignalWhenRunning\\(\\) has parameter \\$process with no type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testIsRunning\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testIssue18\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testKeepsRunningEvenWhenAllStdioPipesHaveBeenClosed\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testKeepsRunningEvenWhenAllStdioSocketsHaveBeenClosed\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testPipesWillBeUnsetBeforeStarting\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testProcessPidNotSameDueToShellWrapper\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testProcessPidSameWithExec\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testProcessWillExitFasterThanExitInterval\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testProcessWithCwd\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testProcessWithDefaultCwdAndEnv\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testProcessWithEnv\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testProcessWithSocketIoWillExitFasterThanExitInterval\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testReceivesProcessOutputFromStdoutAttachedToSocket\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testReceivesProcessOutputFromStdoutRedirectedToFile\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testReceivesProcessOutputFromStdoutRedirectedToSocketProcess\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testReceivesProcessOutputFromTwoCommandsChainedStdoutRedirectedToFile\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testReceivesProcessStdoutFromDd\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testReceivesProcessStdoutFromEcho\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testReceivesProcessStdoutFromEchoViaSocketDescriptors\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testStartAlreadyRunningProcess\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testStartAndAllowProcessToExitSuccessfullyUsingEventLoop\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testStartInvalidProcess\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testStartWillAssignPipes\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testStartWithCustomPipesWillAssignPipes\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testStartWithExcessiveNumberOfFileDescriptorsWillThrow\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testStartWithInvalidFileDescriptorPathWillThrowWithoutCallingCustomErrorHandler\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testStartWithSocketDescriptorsWillAssignDuplexPipes\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testStartWithoutAnyPipesWillNotAssignPipes\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testStartWithoutLoopAssignsLoopAutomatically\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testTerminateProcesWithoutStartingReturnsFalse\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testTerminateWillExit\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testTerminateWithDefaultTermSignalUsingEventLoop\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\AbstractProcessTest\\:\\:testTerminateWithStopAndContinueSignalsUsingEventLoop\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^PHPDoc tag @throws with type React\\\\Tests\\\\ChildProcess\\\\PHPUnit_Framework_ExpectationFailedException is not subtype of Throwable$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Parameter \\#1 \\$address of function stream_socket_client expects string, string\\|false given\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Parameter \\#1 \\$arg of function escapeshellarg expects string, string\\|false given\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Parameter \\#1 \\$callback of function set_error_handler expects \\(callable\\(int, string, string, int\\)\\: bool\\)\\|null, Closure\\(mixed, mixed\\)\\: void given\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Parameter \\#1 \\$class of class ReflectionProperty constructor expects object\\|string, React\\\\Stream\\\\ReadableStreamInterface\\|React\\\\Stream\\\\WritableStreamInterface\\|null given\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Parameter \\#1 \\$cmd of class React\\\\ChildProcess\\\\Process constructor expects string, string\\|false given\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Parameter \\#1 \\$filename of function unlink expects string, string\\|false given\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Parameter \\#1 \\$socket of function stream_socket_accept expects resource, resource\\|false given\\.$#"
+			count: 2
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Parameter \\#1 \\$socket of function stream_socket_get_name expects resource, resource\\|false given\\.$#"
+			count: 2
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Parameter \\#1 \\$stream of function fclose expects resource, resource\\|false given\\.$#"
+			count: 2
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Parameter \\#1 \\$stream of function rewind expects resource, resource\\|false given\\.$#"
+			count: 2
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Parameter \\#1 \\$stream of function stream_get_contents expects resource, resource\\|false given\\.$#"
+			count: 4
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Parameter \\#1 \\$string of function rtrim expects string, string\\|false given\\.$#"
+			count: 4
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Parameter \\#2 \\$subject of function preg_match expects string, string\\|false given\\.$#"
+			count: 3
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Throwing object of an unknown class PHPUnit_Framework_ExpectationFailedException\\.$#"
+			count: 1
+			path: tests/AbstractProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\ExtEventLoopProcessTest\\:\\:createLoop\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/ExtEventLoopProcessTest.php
+
+		-
+			message: "#^Instantiated class React\\\\EventLoop\\\\LibEvLoop not found\\.$#"
+			count: 1
+			path: tests/ExtLibevLoopProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\ExtLibevLoopProcessTest\\:\\:createLoop\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/ExtLibevLoopProcessTest.php
+
+		-
+			message: "#^Instantiated class React\\\\EventLoop\\\\LibEventLoop not found\\.$#"
+			count: 1
+			path: tests/ExtLibeventLoopProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\ExtLibeventLoopProcessTest\\:\\:createLoop\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/ExtLibeventLoopProcessTest.php
+
+		-
+			message: "#^Method React\\\\Tests\\\\ChildProcess\\\\StreamSelectLoopProcessTest\\:\\:createLoop\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: tests/StreamSelectLoopProcessTest.php
