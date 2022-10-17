@@ -6,6 +6,15 @@
 Event-driven library for executing child processes with
 [ReactPHP](https://reactphp.org/).
 
+> **Development version:** This branch contains the code for the upcoming 0.7 release.
+> For the code of the current stable 0.6.x release, check out the
+> [`0.6.x` branch](https://github.com/reactphp/child-process/tree/0.6.x).
+>
+> The upcoming 0.7 release will be the way forward for this package.
+> However, we will still actively support 0.6.x for those not yet
+> on the latest version.
+> See also [installation instructions](#install) for more details.
+
 This library integrates [Program Execution](http://php.net/manual/en/book.exec.php)
 with the [EventLoop](https://github.com/reactphp/event-loop).
 Child processes launched may be signaled and will emit an
@@ -585,10 +594,11 @@ $process->start();
 The recommended way to install this library is [through Composer](https://getcomposer.org/).
 [New to Composer?](https://getcomposer.org/doc/00-intro.md)
 
-This will install the latest supported version:
+Once released, this project will follow [SemVer](https://semver.org/).
+At the moment, this will install the latest development version:
 
 ```bash
-composer require react/child-process:^0.6.5
+composer require react/child-process:^0.7@dev
 ```
 
 See also the [CHANGELOG](CHANGELOG.md) for details about version upgrades.
