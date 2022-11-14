@@ -32,14 +32,18 @@
         "react/stream": "^1.2"
     },
     "require-dev": {
-        "phpunit/phpunit": "^9.3 || ^5.7 || ^4.8.35",
+        "phpunit/phpunit": "^9.5 || ^5.7 || ^4.8.35",
         "react/socket": "^1.8",
         "sebastian/environment": "^5.0 || ^3.0 || ^2.0 || ^1.0"
     },
     "autoload": {
-        "psr-4": { "React\\ChildProcess\\": "src" }
+        "psr-4": {
+            "React\\ChildProcess\\": "src/"
+        }
     },
     "autoload-dev": {
-        "psr-4": { "React\\Tests\\ChildProcess\\": "tests" }
+        "psr-4": {
+            "React\\Tests\\ChildProcess\\": "tests/"
+        }
     }
 }
