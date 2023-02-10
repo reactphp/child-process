@@ -246,24 +246,6 @@ abstract class AbstractProcessTest extends TestCase
         $this->assertNull($process->getTermSignal());
     }
 
-    public function testCommandWithEnhancedSigchildCompatibilityReceivesExitCode()
-    {
-        if (DIRECTORY_SEPARATOR === '\\') {
-            $this->markTestSkipped('Process pipes not supported on Windows');
-        }
-
-        $loop = $this->createLoop();
-        $old = Process::isSigchildEnabled();
-        Process::setSigchildEnabled(true);
-        $process = new Process('echo foo');
-        $process->start($loop);
-        Process::setSigchildEnabled($old);
-
-        $loop->run();
-
-        $this->assertEquals(0, $process->getExitCode());
-    }
-
     public function testReceivesProcessStdoutFromEcho()
     {
         if (DIRECTORY_SEPARATOR === '\\') {

@@ -15,9 +15,6 @@ use React\Stream\DuplexStreamInterface;
 /**
  * Process component.
  *
- * This class borrows logic from Symfony's Process component for ensuring
- * compatibility when PHP is compiled with the --enable-sigchild option.
- *
  * This class also implements the `EventEmitterInterface`
  * which allows you to react to certain events:
  *
@@ -40,8 +37,7 @@ use React\Stream\DuplexStreamInterface;
  *     ```
  *
  *     Note that `$code` is `null` if the process has terminated, but the exit
- *     code could not be determined (for example
- *     [sigchild compatibility](#sigchild-compatibility) was disabled).
+ *     code could not be determined.
  *     Similarly, `$term` is `null` unless the process has terminated in response to
  *     an uncaught signal sent to it.
  *     This is not a limitation of this project, but actual how exit codes and signals
@@ -91,17 +87,12 @@ class Process extends EventEmitter
     private $env;
     private $fds;
 
-    private $enhanceSigchildCompatibility;
-    private $sigchildPipe;
-
     private $process;
     private $status;
     private $exitCode;
     private $fallbackExitCode;
     private $stopSignal;
     private $termSignal;
-
-    private static $sigchild;
 
     /**
     * Constructor.
@@ -145,7 +136,6 @@ class Process extends EventEmitter
         }
 
         $this->fds = $fds;
-        $this->enhanceSigchildCompatibility = self::isSigchildEnabled();
     }
 
     /**
@@ -173,23 +163,6 @@ class Process extends EventEmitter
         $loop = $loop ?: Loop::get();
         $cmd = $this->cmd;
         $fdSpec = $this->fds;
-        $sigchild = null;
-
-        // Read exit code through fourth pipe to work around --enable-sigchild
-        if ($this->enhanceSigchildCompatibility) {
-            $fdSpec[] = array('pipe', 'w');
-            \end($fdSpec);
-            $sigchild = \key($fdSpec);
-
-            // make sure this is fourth or higher (do not mess with STDIO)
-            if ($sigchild < 3) {
-                $fdSpec[3] = $fdSpec[$sigchild];
-                unset($fdSpec[$sigchild]);
-                $sigchild = 3;
-            }
-
-            $cmd = \sprintf('(%s) ' . $sigchild . '>/dev/null; code=$?; echo $code >&' . $sigchild . '; exit $code', $cmd);
-        }
 
         // on Windows, we do not launch the given command line in a shell (cmd.exe) by default and omit any error dialogs
         // the cmd.exe shell can explicitly be given as part of the command as detailed in both documentation and tests
@@ -242,11 +215,6 @@ class Process extends EventEmitter
             });
         };
 
-        if ($sigchild !== null) {
-            $this->sigchildPipe = $pipes[$sigchild];
-            unset($pipes[$sigchild]);
-        }
-
         foreach ($pipes as $n => $fd) {
             // use open mode from stream meta data or fall back to pipe open mode for legacy HHVM
             $meta = \stream_get_meta_data($fd);
@@ -290,11 +258,6 @@ class Process extends EventEmitter
 
         foreach ($this->pipes as $pipe) {
             $pipe->close();
-        }
-
-        if ($this->enhanceSigchildCompatibility) {
-            $this->pollExitCodePipe();
-            $this->closeExitCodePipe();
         }
 
         $exitCode = \proc_close($this->process);
@@ -350,7 +313,7 @@ class Process extends EventEmitter
      * will be returned if the process is still running.
      *
      * Null may also be returned if the process has terminated, but the exit
-     * code could not be determined (e.g. sigchild compatibility was disabled).
+     * code could not be determined.
      *
      * @return int|null
      */
@@ -435,85 +398,6 @@ class Process extends EventEmitter
         $status = $this->getFreshStatus();
 
         return $status !== null ? $status['signaled'] : false;
-    }
-
-    /**
-     * Return whether PHP has been compiled with the '--enable-sigchild' option.
-     *
-     * @see \Symfony\Component\Process\Process::isSigchildEnabled()
-     * @return bool
-     */
-    public final static function isSigchildEnabled()
-    {
-        if (null !== self::$sigchild) {
-            return self::$sigchild;
-        }
-
-        if (!\function_exists('phpinfo')) {
-            return self::$sigchild = false; // @codeCoverageIgnore
-        }
-
-        \ob_start();
-        \phpinfo(INFO_GENERAL);
-
-        return self::$sigchild = false !== \strpos(\ob_get_clean(), '--enable-sigchild');
-    }
-
-    /**
-     * Enable or disable sigchild compatibility mode.
-     *
-     * Sigchild compatibility mode is required to get the exit code and
-     * determine the success of a process when PHP has been compiled with
-     * the --enable-sigchild option.
-     *
-     * @param bool $sigchild
-     * @return void
-     */
-    public final static function setSigchildEnabled($sigchild)
-    {
-        self::$sigchild = (bool) $sigchild;
-    }
-
-    /**
-     * Check the fourth pipe for an exit code.
-     *
-     * This should only be used if --enable-sigchild compatibility was enabled.
-     */
-    private function pollExitCodePipe()
-    {
-        if ($this->sigchildPipe === null) {
-            return;
-        }
-
-        $r = array($this->sigchildPipe);
-        $w = $e = null;
-
-        $n = @\stream_select($r, $w, $e, 0);
-
-        if (1 !== $n) {
-            return;
-        }
-
-        $data = \fread($r[0], 8192);
-
-        if (\strlen($data) > 0) {
-            $this->fallbackExitCode = (int) $data;
-        }
-    }
-
-    /**
-     * Close the fourth pipe used to relay an exit code.
-     *
-     * This should only be used if --enable-sigchild compatibility was enabled.
-     */
-    private function closeExitCodePipe()
-    {
-        if ($this->sigchildPipe === null) {
-            return;
-        }
-
-        \fclose($this->sigchildPipe);
-        $this->sigchildPipe = null;
     }
 
     /**

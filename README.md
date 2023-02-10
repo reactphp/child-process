@@ -30,7 +30,6 @@ as [Streams](https://github.com/reactphp/stream).
   * [Command](#command)
   * [Termination](#termination)
   * [Custom pipes](#custom-pipes)
-  * [Sigchild Compatibility](#sigchild-compatibility)
   * [Windows Compatibility](#windows-compatibility)
 * [Install](#install)
 * [Tests](#tests)
@@ -262,8 +261,7 @@ $process->on('exit', function ($code, $term) {
 ```
 
 Note that `$code` is `null` if the process has terminated, but the exit
-code could not be determined (for example
-[sigchild compatibility](#sigchild-compatibility) was disabled).
+code could not be determined.
 Similarly, `$term` is `null` unless the process has terminated in response to
 an uncaught signal sent to it.
 This is not a limitation of this project, but actual how exit codes and signals
@@ -386,43 +384,6 @@ reference the pipes matching common Unix conventions. This library supports any
 number of pipes and additional file descriptors, but many common applications
 being run as a child process will expect that the parent process properly
 assigns these file descriptors.
-
-### Sigchild Compatibility
-
-Internally, this project uses a work-around to improve compatibility when PHP
-has been compiled with the `--enable-sigchild` option. This should not affect most
-installations as this configure option is not used by default and many
-distributions (such as Debian and Ubuntu) are known to not use this by default.
-Some installations that use [Oracle OCI8](http://php.net/manual/en/book.oci8.php)
-may use this configure option to circumvent `defunct` processes.
-
-When PHP has been compiled with the `--enable-sigchild` option, a child process'
-exit code cannot be reliably determined via `proc_close()` or `proc_get_status()`.
-To work around this, we execute the child process with an additional pipe and
-use that to retrieve its exit code.
-
-This work-around incurs some overhead, so we only trigger this when necessary
-and when we detect that PHP has been compiled with the `--enable-sigchild` option.
-Because PHP does not provide a way to reliably detect this option, we try to
-inspect output of PHP's configure options from the `phpinfo()` function.
-
-The static `setSigchildEnabled(bool $sigchild): void` method can be used to
-explicitly enable or disable this behavior like this:
-
-```php
-// advanced: not recommended by default
-Process::setSigchildEnabled(true);
-```
-
-Note that all processes instantiated after this method call will be affected.
-If this work-around is disabled on an affected PHP installation, the `exit`
-event may receive `null` instead of the actual exit code as described above.
-Similarly, some distributions are known to omit the configure options from
-`phpinfo()`, so automatic detection may fail to enable this work-around in some
-cases. You may then enable this  explicitly as given above.
-
-**Note:** The original functionality was taken from Symfony's
-[Process](https://github.com/symfony/process) compoment.
 
 ### Windows Compatibility
 
@@ -606,6 +567,14 @@ See also the [CHANGELOG](CHANGELOG.md) for details about version upgrades.
 This project aims to run on any platform and thus does not require any PHP
 extensions and supports running on legacy PHP 5.3 through current PHP 8+ and HHVM.
 It's *highly recommended to use the latest supported PHP version* for this project.
+
+Note that legacy platforms that use PHP compiled with the legacy `--enable-sigchild`
+option may not reliably determine the child process' exit code in some cases.
+This should not affect most installations as this configure option is not used
+by default and most distributions (such as Debian and Ubuntu) are known to not
+use this by default. This option may be used on some  installations that use
+[Oracle OCI8](https://www.php.net/manual/en/book.oci8.php), see `phpinfo()` output
+to check if your installation might be affected.
 
 See above note for limited [Windows Compatibility](#windows-compatibility).
 
