@@ -14,6 +14,7 @@ jobs:
           - ubuntu-22.04
           - windows-2022
         php:
+          - 8.3
           - 8.2
           - 8.1
           - 8.0
@@ -27,12 +28,14 @@ jobs:
           - 5.4
           - 5.3
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
           coverage: xdebug
           ini-file: development
+      - run: composer config secure-http false && composer config repo.packagist composer http://packagist.org && composer config preferred-install source
+        if: ${{ matrix.php < 5.5 && matrix.os == 'windows-2022' }} # legacy PHP on Windows is allowed to use insecure downloads until it will be removed again
       - run: composer install
       - run: vendor/bin/phpunit --coverage-text
         if: ${{ matrix.php >= 7.3 }}
@@ -45,7 +48,7 @@ jobs:
     runs-on: ubuntu-22.04
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: cp "$(which composer)" composer.phar && ./composer.phar self-update --2.2 # downgrade Composer for HHVM
       - name: Run hhvm composer.phar install
         uses: docker://hhvm/hhvm:3.30-lts-latest
