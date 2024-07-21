@@ -11,6 +11,18 @@ abstract class AbstractProcessTest extends TestCase
 {
     abstract public function createLoop();
 
+    public function testCtorThrowsForInvalidEnv()
+    {
+        $this->setExpectedException('InvalidArgumentException', 'Argument #3 ($env) expected null|array');
+        new Process('exit 0', null, 'env');
+    }
+
+    public function testCtorThrowsForInvalidFds()
+    {
+        $this->setExpectedException('InvalidArgumentException', 'Argument #4 ($fds) expected null|array');
+        new Process('exit 0', null, null, 'fds');
+    }
+
     public function testGetCommand()
     {
         $process = new Process('echo foo', null, null, array());
@@ -124,6 +136,14 @@ abstract class AbstractProcessTest extends TestCase
         $this->assertCount(2, $process->pipes);
         $this->assertSame($process->stdin, $process->pipes[0]);
         $this->assertInstanceOf('React\Stream\WritableStreamInterface', $process->pipes[3]);
+    }
+
+    public function testStartWithInvalidLoopWillThrow()
+    {
+        $process = new Process('exit 0', null, null, array());
+
+        $this->setExpectedException('InvalidArgumentException', 'Argument #1 ($loop) expected null|React\EventLoop\LoopInterface');
+        $process->start('loop');
     }
 
     public function testStartWithInvalidFileDescriptorPathWillThrowWithoutCallingCustomErrorHandler()
