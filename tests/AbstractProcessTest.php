@@ -1099,6 +1099,28 @@ abstract class AbstractProcessTest extends TestCase
         $loop->run();
     }
 
+    public function testIssue116()
+    {
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $this->markTestSkipped('Process pipes not supported on Windows');
+        }
+
+        $loop = $this->createLoop();
+        $process = new Process('exit 0');
+
+        $process->start($loop);
+
+        // through some chain
+        $process->stdout->on('close', function () use ($process) {
+            $process->close();
+        });
+
+        $process->close();
+        $loop->stop();
+
+        $this->assertFalse($process->isRunning());
+    }
+
     /**
      * Execute a callback at regular intervals until it returns successfully or
      * a timeout is reached.
