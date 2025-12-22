@@ -70,7 +70,9 @@ abstract class AbstractProcessTest extends TestCase
         $process->start();
 
         $ref = new \ReflectionProperty($process->stdin, 'loop');
-        $ref->setAccessible(true);
+        if (PHP_VERSION_ID < 80100) {
+            $ref->setAccessible(true);
+        }
         $loop = $ref->getValue($process->stdin);
 
         $this->assertInstanceOf('React\EventLoop\LoopInterface', $loop);
@@ -533,7 +535,7 @@ abstract class AbstractProcessTest extends TestCase
          * environment variable (i.e. current shell/script) on some platforms.
          */
         $this->assertSame(getcwd(), $cwd);
-        $this->assertLessThanOrEqual(1, (count($_SERVER) - (integer) $envCount));
+        $this->assertLessThanOrEqual(1, (count($_SERVER) - (int) $envCount));
     }
 
     public function testProcessWithCwd()
