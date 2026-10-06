@@ -297,6 +297,9 @@ class Process extends EventEmitter
             return;
         }
 
+        $process = $this->process;
+        $this->process = null;
+
         foreach ($this->pipes as $pipe) {
             $pipe->close();
         }
@@ -306,8 +309,7 @@ class Process extends EventEmitter
             $this->closeExitCodePipe();
         }
 
-        $exitCode = \proc_close($this->process);
-        $this->process = null;
+        $exitCode = \proc_close($process);
 
         if ($this->exitCode === null && $exitCode !== -1) {
             $this->exitCode = $exitCode;
